@@ -16,7 +16,7 @@ class Item(db.Model, PersistentBase):
     Class that represents an Item
     """
 
-    __tablename__ = "items"
+    __tablename__ = "item"
 
     ##################################################
     # Table Schema
@@ -27,7 +27,7 @@ class Item(db.Model, PersistentBase):
     description = db.Column(db.String(1023))
     price = db.Column(db.Numeric(14, 2), nullable=False)
     quantity = db.Column(db.Integer, nullable=False, default=1)
-    order_id = db.Column(db.Integer, db.ForeignKey("orders.id", ondelete="CASCADE"))
+    order_id = db.Column(db.Integer, db.ForeignKey("order.id", ondelete="CASCADE"))
 
     def __repr__(self):
         return f" Item {self.name} id=[{self.id}]>"
