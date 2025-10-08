@@ -92,7 +92,10 @@ class TestOrderService(TestCase):
         self.assertIn("id", new_order)
         self.assertEqual(new_order["customer_id"], test_order.customer_id)
         self.assertEqual(new_order["status"], test_order.status)
-        self.assertEqual(new_order["total_price"], test_order.total_price)
+        expected_total = sum(
+            float(item.price) * item.quantity for item in test_order.items
+        )
+        self.assertAlmostEqual(new_order["total_price"], expected_total, places=2)
         self.assertListEqual(
             [item["id"] for item in new_order["items"]],
             [item.id for item in test_order.items],
