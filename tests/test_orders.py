@@ -24,7 +24,7 @@ import logging
 from unittest.mock import patch, MagicMock
 from unittest import TestCase
 from wsgi import app
-from service.models.orders import Order, DataValidationError, db, OrderStatus
+from service.models.order import Order, DataValidationError, db, OrderStatus
 from .factories import OrderFactory, ItemFactory
 
 DATABASE_URI = os.getenv(

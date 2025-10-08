@@ -22,7 +22,7 @@ import sys
 from flask import Flask
 from service import config
 from service.common import log_handlers
-from service.models import orders
+from service.models import order
 
 
 ############################################################
@@ -36,7 +36,8 @@ def create_app():
 
     # Initialize Plugins
     # pylint: disable=import-outside-toplevel
-    from service.models.orders import db
+    from service.models.order import db
+
     db.init_app(app)
 
     with app.app_context():

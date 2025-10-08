@@ -9,8 +9,8 @@ Test Factory to make fake objects for testing
 import factory
 import random
 from decimal import Decimal
-from service.models.orders import Order, OrderStatus
-from service.models.items import Item
+from service.models.order import Order, OrderStatus
+from service.models.item import Item
 
 
 class OrderFactory(factory.Factory):
