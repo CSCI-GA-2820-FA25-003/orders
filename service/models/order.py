@@ -27,7 +27,7 @@ class Order(db.Model, PersistentBase):
     Class that represents an Order
     """
 
-    __tablename__ = "orders"
+    # __tablename__ = "orders"
     ##################################################
     # Table Schema
     ##################################################
@@ -39,7 +39,7 @@ class Order(db.Model, PersistentBase):
         nullable=False,
     )
     total_price = db.Column(db.Float, nullable=False)
-    items = db.relationship(Item, backref="order", lazy=True, passive_deletes=True)
+    items = db.relationship("Item", backref="order", lazy=True, passive_deletes=True)
 
     def __repr__(self):
         return f" Order of the customer {self.customer_id} with order_id=[{self.id}]>"

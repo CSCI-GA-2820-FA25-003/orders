@@ -1,46 +1,51 @@
-"""
-Test Factory to make fake objects for testing
-"""
-
-"""
-Test Factory to make fake objects for testing
-"""
-
-import factory
+from factory import Factory, SubFactory, Sequence, Faker, post_generation, LazyFunction
 import random
 from decimal import Decimal
 from service.models.order import Order, OrderStatus
 from service.models.item import Item
 
 
-class OrderFactory(factory.Factory):
+"""
+Test Factory to make fake objects for testing
+"""
+
+
+class OrderFactory(Factory):
     """Creates fake Order model instances for tests"""
 
     class Meta:  # pylint: disable=too-few-public-methods
         model = Order
 
-    id = factory.Sequence(lambda n: n + 1)
-    customer_id = factory.Sequence(lambda n: n + 1)
+    id = Sequence(lambda n: n + 1)
+    customer_id = Sequence(lambda n: n + 1)
     status = OrderStatus.PENDING
-    total_price = factory.LazyFunction(
-        lambda: float(round(random.uniform(10.0, 200.0), 2))
-    )
+    total_price = LazyFunction(lambda: float(round(random.uniform(10.0, 200.0), 2)))
+
     # items should be a list (relationship), default empty list per-instance
-    items = factory.LazyFunction(list)
+    # items = factory.LazyFunction(list)
+    @post_generation
+    def items(
+        self, create, extracted, **kwargs
+    ):  # pylint: disable=method-hidden, unused-argument
+        """Creates the items list"""
+        if not create:
+            return
+
+        if extracted:
+            self.items = extracted
 
 
-class ItemFactory(factory.Factory):
+class ItemFactory(Factory):
     """Creates fake Item model instances for tests"""
 
     class Meta:  # pylint: disable=too-few-public-methods
         model = Item
 
-    id = factory.Sequence(lambda n: n + 1)
-    name = factory.Faker("word")
-    category = factory.Faker("word")
-    description = factory.Faker("sentence")
-    price = factory.LazyFunction(
-        lambda: Decimal(str(round(random.uniform(1.0, 100.0), 2)))
-    )
-    quantity = factory.LazyFunction(lambda: random.randint(1, 5))
-    order_id = factory.Sequence(lambda n: n + 1)
+    id = Sequence(lambda n: n + 1)
+    name = Faker("word")
+    category = Faker("word")
+    description = Faker("sentence")
+    price = LazyFunction(lambda: Decimal(str(round(random.uniform(1.0, 100.0), 2))))
+    quantity = LazyFunction(lambda: random.randint(1, 5))
+    order_id = None
+    order = SubFactory(OrderFactory)
