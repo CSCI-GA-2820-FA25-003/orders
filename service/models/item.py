@@ -16,7 +16,7 @@ class Item(db.Model, PersistentBase):
     Class that represents an Item
     """
 
-    __tablename__ = "items"
+    __tablename__ = "item"
 
     ##################################################
     # Table Schema

@@ -68,119 +68,119 @@ class TestOrder(TestCase):
     #  T E S T   C A S E S
     ######################################################################
 
-    # def test_add_order_item(self):
-    #     """It should create an order with an item and add it to the database"""
-    #     orders = Order.all()
-    #     self.assertEqual(orders, [])
-    #     order = OrderFactory()
-    #     item = ItemFactory()
-    #     # associate item with order
-    #     order.items.append(item)
-    #     order.create()
-    #     # Assert that it was assigned an id and shows up in the database
-    #     self.assertIsNotNone(order.id)
-    #     orders = Order.all()
-    #     self.assertEqual(len(orders), 1)
+    def test_add_order_item(self):
+        """It should create an order with an item and add it to the database"""
+        orders = Order.all()
+        self.assertEqual(orders, [])
+        order = OrderFactory()
+        item = ItemFactory()
+        # associate item with order
+        order.items.append(item)
+        order.create()
+        # Assert that it was assigned an id and shows up in the database
+        self.assertIsNotNone(order.id)
+        orders = Order.all()
+        self.assertEqual(len(orders), 1)
 
-    #     new_order = Order.find(order.id)
-    #     # items on the order should include the appended item's id
-    #     self.assertEqual(new_order.items[0], item)
+        new_order = Order.find(order.id)
+        # items on the order should include the appended item's id
+        self.assertEqual(new_order.items[0], item)
 
-    # def test_update_order_item(self):
-    #     """It should update an order's item (via item fields)"""
-    #     orders = Order.all()
-    #     self.assertEqual(orders, [])
+    def test_update_order_item(self):
+        """It should update an order's item (via item fields)"""
+        orders = Order.all()
+        self.assertEqual(orders, [])
 
-    #     order = OrderFactory()
-    #     item = ItemFactory()
-    #     order.create()
-    #     # associate after create (items stored as ids on Order)
-    #     order.items.append(item)
-    #     order.update()
+        order = OrderFactory()
+        item = ItemFactory()
+        order.create()
+        # associate after create (items stored as ids on Order)
+        order.items.append(item)
+        order.update()
 
-    #     # Fetch it back
-    #     order = Order.find(order.id)
-    #     self.assertEqual(order.items[0], item)
+        # Fetch it back
+        order = Order.find(order.id)
+        self.assertEqual(order.items[0], item)
 
-    #     # change item fields and update
-    #     item = order.items[0]
-    #     item.quantity = 3
-    #     item.update()
-    #     order.update()
+        # change item fields and update
+        item = order.items[0]
+        item.quantity = 3
+        item.update()
+        order.update()
 
-    #     order = Order.find(order.id)
-    #     self.assertEqual(order.items[0].quantity, 3)
-    #     self.assertEqual(order.items[0].name, item.name)
-    #     self.assertEqual(order.items[0].description, item.description)
-    #     self.assertEqual(order.items[0].price, item.price)
-    #     self.assertEqual(order.items[0].category, item.category)
+        order = Order.find(order.id)
+        self.assertEqual(order.items[0].quantity, 3)
+        self.assertEqual(order.items[0].name, item.name)
+        self.assertEqual(order.items[0].description, item.description)
+        self.assertEqual(order.items[0].price, item.price)
+        self.assertEqual(order.items[0].category, item.category)
 
-    # def test_delete_order_item(self):
-    #     """It should remove an item from an order"""
-    #     orders = Order.all()
-    #     self.assertEqual(orders, [])
-    #     order = OrderFactory()
-    #     item = ItemFactory()
-    #     order.items.append(item)
-    #     order.create()
-    #     # Assert that it was assigned an id and shows up in the database
-    #     self.assertIsNotNone(order.id)
-    #     orders = Order.all()
-    #     self.assertEqual(len(orders), 1)
+    def test_delete_order_item(self):
+        """It should remove an item from an order"""
+        orders = Order.all()
+        self.assertEqual(orders, [])
+        order = OrderFactory()
+        item = ItemFactory()
+        order.items.append(item)
+        order.create()
+        # Assert that it was assigned an id and shows up in the database
+        self.assertIsNotNone(order.id)
+        orders = Order.all()
+        self.assertEqual(len(orders), 1)
 
-    #     # Fetch it back
-    #     order = Order.find(order.id)
-    #     # remove item id from order and update
-    #     item = order.items[0]
-    #     item.delete()
-    #     order.update()
+        # Fetch it back
+        order = Order.find(order.id)
+        # remove item id from order and update
+        item = order.items[0]
+        item.delete()
+        order.update()
 
-    #     # Fetch it back again
-    #     order = Order.find(order.id)
-    #     self.assertEqual(len(order.items), 0)
+        # Fetch it back again
+        order = Order.find(order.id)
+        self.assertEqual(len(order.items), 0)
 
-    # def test_serialize_an_item(self):
-    #     """It should serialize an Item"""
-    #     item = ItemFactory()
-    #     serial_item = item.serialize()
-    #     self.assertEqual(serial_item["id"], item.id)
-    #     self.assertEqual(serial_item["name"], item.name)
-    #     self.assertEqual(serial_item["category"], item.category)
-    #     self.assertEqual(serial_item["description"], item.description)
-    #     self.assertEqual(serial_item["price"], float(item.price))
-    #     self.assertEqual(serial_item["order_id"], item.order_id)
-    #     self.assertEqual(serial_item["quantity"], item.quantity)
+    def test_serialize_an_item(self):
+        """It should serialize an Item"""
+        item = ItemFactory()
+        serial_item = item.serialize()
+        self.assertEqual(serial_item["id"], item.id)
+        self.assertEqual(serial_item["name"], item.name)
+        self.assertEqual(serial_item["category"], item.category)
+        self.assertEqual(serial_item["description"], item.description)
+        self.assertEqual(serial_item["price"], float(item.price))
+        self.assertEqual(serial_item["order_id"], item.order_id)
+        self.assertEqual(serial_item["quantity"], item.quantity)
 
-    # def test_deserialize_an_item(self):
-    #     """It should deserialize an Item"""
-    #     order = OrderFactory()
-    #     order.create()
+    def test_deserialize_an_item(self):
+        """It should deserialize an Item"""
+        order = OrderFactory()
+        order.create()
 
-    #     item = ItemFactory(order_id=order.id)
-    #     item.create()
+        item = ItemFactory(order_id=order.id)
+        item.create()
 
-    #     new_item = Item()
-    #     new_item.deserialize(item.serialize())
+        new_item = Item()
+        new_item.deserialize(item.serialize())
 
-    #     self.assertEqual(new_item.id, item.id)
-    #     self.assertEqual(new_item.name, item.name)
-    #     self.assertEqual(new_item.category, item.category)
-    #     self.assertEqual(new_item.description, item.description)
-    #     self.assertEqual(float(new_item.price), float(item.price))
-    #     self.assertEqual(new_item.order_id, item.order_id)
-    #     self.assertEqual(new_item.quantity, item.quantity)
+        self.assertEqual(new_item.id, item.id)
+        self.assertEqual(new_item.name, item.name)
+        self.assertEqual(new_item.category, item.category)
+        self.assertEqual(new_item.description, item.description)
+        self.assertEqual(float(new_item.price), float(item.price))
+        self.assertEqual(new_item.order_id, item.order_id)
+        self.assertEqual(new_item.quantity, item.quantity)
 
-    # def test_total_price_calculation(self):
-    #     """It should calculate total price based on items"""
-    #     order = OrderFactory()
-    #     item1 = ItemFactory(price=10.00)
-    #     item2 = ItemFactory(price=15.50)
-    #     item3 = ItemFactory(price=4.75)
-    #     order.items.extend([item1, item2, item3])
-    #     order.create()
-    #     price = (
-    #         item1.price * item1.quantity
-    #         + item2.price * item2.quantity
-    #         + item3.price * item3.quantity
-    #     )
-    #     self.assertEqual(order.total_price, price)
+    def test_total_price_calculation(self):
+        """It should calculate total price based on items"""
+        order = OrderFactory()
+        item1 = ItemFactory(price=10.00)
+        item2 = ItemFactory(price=15.50)
+        item3 = ItemFactory(price=4.75)
+        order.items.extend([item1, item2, item3])
+        order.create()
+        price = (
+            item1.price * item1.quantity
+            + item2.price * item2.quantity
+            + item3.price * item3.quantity
+        )
+        self.assertEqual(order.total_price, price)

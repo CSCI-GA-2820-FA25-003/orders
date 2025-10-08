@@ -27,7 +27,7 @@ class Order(db.Model, PersistentBase):
     Class that represents an Order
     """
 
-    # __tablename__ = "orders"
+    __tablename__ = "order"
     ##################################################
     # Table Schema
     ##################################################

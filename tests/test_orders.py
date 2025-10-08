@@ -87,49 +87,49 @@ class TestOrder(TestCase):
         with self.assertRaises(DataValidationError):
             order.create()
 
-    # def test_update(self):
-    #     """It should update an Order"""
-    #     order = OrderFactory()
-    #     order.create()
-    #     self.assertIsNotNone(order.id)
+    def test_update(self):
+        """It should update an Order"""
+        order = OrderFactory()
+        order.create()
+        self.assertIsNotNone(order.id)
 
-    #     order = Order.find(order.id)
-    #     order.status = OrderStatus.DELIVERED
-    #     order.update()
+        order = Order.find(order.id)
+        order.status = OrderStatus.DELIVERED
+        order.update()
 
-    #     order = Order.find(order.id)
-    #     self.assertEqual(order.status, OrderStatus.DELIVERED)
+        order = Order.find(order.id)
+        self.assertEqual(order.status, OrderStatus.DELIVERED)
 
-    # @patch("service.models.order.db.session.commit")
-    # def test_failed_update(self, mocked_session):
-    #     """It should catch an update exception"""
-    #     mocked_session.side_effect = Exception("Failed to add to session")
-    #     order = OrderFactory()
-    #     with self.assertRaises(DataValidationError):
-    #         order.update()
+    @patch("service.models.order.db.session.commit")
+    def test_failed_update(self, mocked_session):
+        """It should catch an update exception"""
+        mocked_session.side_effect = Exception("Failed to add to session")
+        order = OrderFactory()
+        with self.assertRaises(DataValidationError):
+            order.update()
 
-    # def test_delete(self):
-    #     order = OrderFactory()
-    #     order.create()
-    #     order.delete()
-    #     deleted_order = order.find(order.id)
-    #     self.assertIsNone(deleted_order)
+    def test_delete(self):
+        order = OrderFactory()
+        order.create()
+        order.delete()
+        deleted_order = order.find(order.id)
+        self.assertIsNone(deleted_order)
 
-    # @patch("service.models.order.db.session.commit")
-    # def test_failed_delete(self, mocked_session):
-    #     """It should catch a delete exception"""
-    #     mocked_session.side_effect = Exception("Failed to add to session")
-    #     order = OrderFactory()
-    #     with self.assertRaises(DataValidationError):
-    #         order.delete()
+    @patch("service.models.order.db.session.commit")
+    def test_failed_delete(self, mocked_session):
+        """It should catch a delete exception"""
+        mocked_session.side_effect = Exception("Failed to add to session")
+        order = OrderFactory()
+        with self.assertRaises(DataValidationError):
+            order.delete()
 
-    # def test_find_by_id(self):
-    #     """It should find an Order by id"""
-    #     order = OrderFactory()
-    #     order.create()
-    #     found_order = order.find(order.id)
-    #     self.assertIsNotNone(found_order)
-    #     self.assertEqual(found_order.id, order.id)
+    def test_find_by_id(self):
+        """It should find an Order by id"""
+        order = OrderFactory()
+        order.create()
+        found_order = order.find(order.id)
+        self.assertIsNotNone(found_order)
+        self.assertEqual(found_order.id, order.id)
 
     def test_serialize_order(self):
         """It should serialize an Order"""
