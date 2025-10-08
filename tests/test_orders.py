@@ -81,7 +81,7 @@ class TestOrder(TestCase):
 
     @patch("service.models.orders.db.session.commit")
     def test_failed_create(self, mocked_session):
-        """It should not create an Order"""
+        """It should catch a create exception"""
         mocked_session.side_effect = Exception("Failed to add to session")
         order = OrderFactory()
         with self.assertRaises(DataValidationError):
@@ -102,7 +102,7 @@ class TestOrder(TestCase):
 
     @patch("service.models.orders.db.session.commit")
     def test_failed_update(self, mocked_session):
-        """It should not update an Order"""
+        """It should catch an update exception"""
         mocked_session.side_effect = Exception("Failed to add to session")
         order = OrderFactory()
         with self.assertRaises(DataValidationError):
@@ -117,11 +117,11 @@ class TestOrder(TestCase):
 
     @patch("service.models.orders.db.session.commit")
     def test_failed_delete(self, mocked_session):
-        """It should not delete an Order"""
+        """It should catch a delete exception"""
         mocked_session.side_effect = Exception("Failed to add to session")
         order = OrderFactory()
         with self.assertRaises(DataValidationError):
-            order.create()
+            order.delete()
 
     def test_find_by_id(self):
         """It should find an Order by id"""
