@@ -25,7 +25,8 @@ from unittest import TestCase
 from wsgi import app
 from service.common import status
 from service.models.order import db, Order
-from .factories import OrderFactory, ItemFactory
+from service.routes import check_content_type
+from .factories import OrderFactory
 
 DATABASE_URI = os.getenv(
     "DATABASE_URI", "postgresql+psycopg://postgres:postgres@localhost:5432/testdb"
@@ -161,3 +162,8 @@ class TestOrderService(TestCase):
         """It should not allow an illegal method call"""
         resp = self.client.put(BASE_URL, json={"not": "today"})
         self.assertEqual(resp.status_code, status.HTTP_405_METHOD_NOT_ALLOWED)
+
+    def test_check_content_type(self):
+        """check_content_type should 415 when Content-Type header is missing"""
+        resp = self.client.post(BASE_URL)  # no headers
+        self.assertEqual(resp.status_code, status.HTTP_415_UNSUPPORTED_MEDIA_TYPE)
