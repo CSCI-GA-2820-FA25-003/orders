@@ -79,6 +79,26 @@ def create_orders():
 
 
 ######################################################################
+# LIST ALL ORDERS
+######################################################################
+@app.route("/orders", methods=["GET"])
+def list_orders():
+    """Returns all of the Orders"""
+    app.logger.info("Request for Order list")
+    orders = []
+
+    # Process the query string if any
+    name = request.args.get("name")
+    if name:
+        orders = Order.find_by_name(name)
+    else:
+        orders = Order.all()
+
+    # Return as an array of dictionaries
+    results = [order.serialize() for order in orders]
+
+    return jsonify(results), status.HTTP_200_OK
+  
 # DELETE AN ORDER
 ######################################################################
 @app.route("/orders/<int:order_id>", methods=["DELETE"])

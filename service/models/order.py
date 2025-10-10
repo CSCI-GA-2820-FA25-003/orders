@@ -102,3 +102,13 @@ class Order(db.Model, PersistentBase):
         """Finds a Order by it's ID"""
         logger.info("Processing lookup for id %s ...", by_id)
         return cls.query.session.get(cls, by_id)
+
+    @classmethod
+    def find_by_name(cls, name):
+        """Returns all Orders with the given name
+
+        Args:
+            name (string): the name of the Orders you want to match
+        """
+        logger.info("Processing name query for %s ...", name)
+        return cls.query.filter(cls.name == name)

@@ -25,6 +25,7 @@ from unittest import TestCase
 from wsgi import app
 from service.common import status
 from service.models.order import db, Order
+from service.routes import check_content_type
 from .factories import OrderFactory
 
 DATABASE_URI = os.getenv(
@@ -67,7 +68,27 @@ class TestOrderService(TestCase):
         db.session.remove()
 
     ######################################################################
-    #  P L A C E   T E S T   C A S E S   H E R E
+    #  H E L P E R   M E T H O D S
+    ######################################################################
+
+    def _create_orders(self, count):
+        """Factory method to create orders in bulk"""
+        orders = []
+        for _ in range(count):
+            order = OrderFactory()
+            resp = self.client.post(BASE_URL, json=order.serialize())
+            self.assertEqual(
+                resp.status_code,
+                status.HTTP_201_CREATED,
+                "Could not create test Order",
+            )
+            new_order = resp.get_json()
+            order.id = new_order["id"]
+            orders.append(order)
+        return orders
+
+    ######################################################################
+    #  O R D E R   T E S T   C A S E S
     ######################################################################
 
     def test_index(self):
@@ -115,6 +136,36 @@ class TestOrderService(TestCase):
         #     [item.id for item in test_order.items],
         # )
 
+    def test_get_order_list(self):
+        """It should Get a list of Orders"""
+        self._create_orders(5)
+        resp = self.client.get(BASE_URL)
+        self.assertEqual(resp.status_code, status.HTTP_200_OK)
+        data = resp.get_json()
+        self.assertEqual(len(data), 5)
+
+    def test_bad_request(self):
+        """It should not Create when sending the wrong data"""
+        resp = self.client.post(BASE_URL, json={"name": "not enough data"})
+        self.assertEqual(resp.status_code, status.HTTP_400_BAD_REQUEST)
+
+    def test_unsupported_media_type(self):
+        """It should not Create when sending wrong media type"""
+        order = OrderFactory()
+        resp = self.client.post(
+            BASE_URL, json=order.serialize(), content_type="test/html"
+        )
+        self.assertEqual(resp.status_code, status.HTTP_415_UNSUPPORTED_MEDIA_TYPE)
+
+    def test_method_not_allowed(self):
+        """It should not allow an illegal method call"""
+        resp = self.client.put(BASE_URL, json={"not": "today"})
+        self.assertEqual(resp.status_code, status.HTTP_405_METHOD_NOT_ALLOWED)
+
+    def test_check_content_type(self):
+        """check_content_type should 415 when Content-Type header is missing"""
+        resp = self.client.post(BASE_URL)  # no headers
+        self.assertEqual(resp.status_code, status.HTTP_415_UNSUPPORTED_MEDIA_TYPE)
     def test_delete_order(self):
         """It should Delete an Order"""
         # Create a test order first
