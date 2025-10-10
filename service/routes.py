@@ -79,7 +79,7 @@ def create_orders():
 
 
 ######################################################################
-# LIST ALL ACCOUNTS
+# LIST ALL ORDERS
 ######################################################################
 @app.route("/orders", methods=["GET"])
 def list_orders():
