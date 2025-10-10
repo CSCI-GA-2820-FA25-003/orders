@@ -191,6 +191,16 @@ class TestOrderService(TestCase):
         updated_order_2 = resp.get_json()
         self.assertEqual(updated_order_2["status"], "SHIPPED")
 
+        new_order_3 = resp.get_json()
+        new_order_3["total_price"] = 0.0
+        new_order_3["items"] = []
+        new_order_id_3 = new_order_3["id"]
+        resp = self.client.put(f"{BASE_URL}/{new_order_id_3}", json=new_order_3)
+        self.assertEqual(resp.status_code, status.HTTP_200_OK)
+        updated_order_3 = resp.get_json()
+        self.assertEqual(updated_order_3["total_price"], 0.0)
+        self.assertListEqual(updated_order_3["items"], [])
+
     def test_update_order_not_found_returns_404(self):
         """PUT /orders/<id> should 404 when the order does not exist"""
         payload = {
