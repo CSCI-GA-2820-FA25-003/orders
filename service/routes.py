@@ -24,6 +24,7 @@ and Delete YourResourceModel
 from flask import jsonify, request, url_for, abort
 from flask import current_app as app  # Import Flask application
 from service.models.order import Order
+from service.models.item import Item
 from service.common import status  # HTTP Status Codes
 
 
@@ -73,6 +74,38 @@ def create_orders():
     location_url = "unknown"
     return (
         jsonify(order.serialize()),
+        status.HTTP_201_CREATED,
+        {"Location": location_url},
+    )
+
+
+######################################################################
+# CREATE A NEW ITEM
+######################################################################
+@app.route("/items", methods=["POST"])
+def create_items():
+    """
+    Create a Item
+    This endpoint will create a Item based the data in the body that is posted
+    """
+    app.logger.info("Request to Create a Item...")
+    check_content_type("application/json")
+
+    item = Item()
+    # Get the data from the request and deserialize it
+    data = request.get_json()
+    app.logger.info("Processing: %s", data)
+    item.deserialize(data)
+
+    # Save the new Item to the database
+    item.create()
+    app.logger.info("Item with new id [%s] saved!", item.id)
+
+    # TODO: uncomment this code when get_items is implemented
+    # location_url = url_for("get_items", item_id=item.id, _external=True)
+    location_url = "unknown"
+    return (
+        jsonify(item.serialize()),
         status.HTTP_201_CREATED,
         {"Location": location_url},
     )
