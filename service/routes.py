@@ -98,6 +98,27 @@ def list_orders():
     results = [order.serialize() for order in orders]
 
     return jsonify(results), status.HTTP_200_OK
+  
+# DELETE AN ORDER
+######################################################################
+@app.route("/orders/<int:order_id>", methods=["DELETE"])
+def delete_orders(order_id):
+    """
+    Delete an Order
+
+    This endpoint will delete an Order based the id specified in the path
+    """
+    app.logger.info("Request to delete account with id: %s", order_id)
+
+    # Retrieve the order to delete and delete it if it exists
+    order = Order.find(order_id)
+    if not order:
+        abort(status.HTTP_404_NOT_FOUND, f"Order with id '{order_id}' was not found.")
+
+    order.delete()
+    app.logger.info("Order with id [%s] deleted!", order_id)
+
+    return "", status.HTTP_204_NO_CONTENT
 
 
 ######################################################################
