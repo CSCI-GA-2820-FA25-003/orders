@@ -168,6 +168,41 @@ class TestOrderService(TestCase):
         resp = self.client.post(BASE_URL)  # no headers
         self.assertEqual(resp.status_code, status.HTTP_415_UNSUPPORTED_MEDIA_TYPE)
 
+    def test_update_order(self):
+        """It should Update an existing Order"""
+        # create an Order to update
+        test_order = OrderFactory()
+        resp = self.client.post(BASE_URL, json=test_order.serialize())
+        self.assertEqual(resp.status_code, status.HTTP_201_CREATED)
+
+        # update the order
+        new_order = resp.get_json()
+        new_order["status"] = "PENDING"
+        new_order_id = new_order["id"]
+        resp = self.client.put(f"{BASE_URL}/{new_order_id}", json=new_order)
+        self.assertEqual(resp.status_code, status.HTTP_200_OK)
+        updated_order = resp.get_json()
+        self.assertEqual(updated_order["status"], "PENDING")
+
+        new_order_2 = resp.get_json()
+        new_order_2["status"] = "SHIPPED"
+        new_order_id_2 = new_order_2["id"]
+        resp = self.client.put(f"{BASE_URL}/{new_order_id_2}", json=new_order_2)
+        self.assertEqual(resp.status_code, status.HTTP_200_OK)
+        updated_order_2 = resp.get_json()
+        self.assertEqual(updated_order_2["status"], "SHIPPED")
+
+    def test_update_order_not_found_returns_404(self):
+        """PUT /orders/<id> should 404 when the order does not exist"""
+        payload = {
+            "customer_id": 1,
+            "status": "PENDING",
+            "total_price": 0.0,
+            "items": [],
+        }
+        resp = self.client.put(f"{BASE_URL}/999999", json=payload)
+        self.assertEqual(resp.status_code, status.HTTP_404_NOT_FOUND)
+
     def test_delete_order(self):
         """It should Delete an Order"""
         # Create a test order first
