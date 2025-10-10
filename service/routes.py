@@ -80,35 +80,25 @@ def create_orders():
 
 
 ######################################################################
-# CREATE A NEW ITEM
+# LIST ALL ACCOUNTS
 ######################################################################
-@app.route("/items", methods=["POST"])
-def create_items():
-    """
-    Create a Item
-    This endpoint will create a Item based the data in the body that is posted
-    """
-    app.logger.info("Request to Create a Item...")
-    check_content_type("application/json")
+@app.route("/orders", methods=["GET"])
+def list_orders():
+    """Returns all of the Orders"""
+    app.logger.info("Request for Order list")
+    orders = []
 
-    item = Item()
-    # Get the data from the request and deserialize it
-    data = request.get_json()
-    app.logger.info("Processing: %s", data)
-    item.deserialize(data)
+    # Process the query string if any
+    name = request.args.get("name")
+    if name:
+        orders = Order.find_by_name(name)
+    else:
+        orders = Order.all()
 
-    # Save the new Item to the database
-    item.create()
-    app.logger.info("Item with new id [%s] saved!", item.id)
+    # Return as an array of dictionaries
+    results = [order.serialize() for order in orders]
 
-    # TODO: uncomment this code when get_items is implemented
-    # location_url = url_for("get_items", item_id=item.id, _external=True)
-    location_url = "unknown"
-    return (
-        jsonify(item.serialize()),
-        status.HTTP_201_CREATED,
-        {"Location": location_url},
-    )
+    return jsonify(results), status.HTTP_200_OK
 
 
 ######################################################################

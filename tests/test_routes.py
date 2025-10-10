@@ -68,7 +68,27 @@ class TestOrderService(TestCase):
         db.session.remove()
 
     ######################################################################
-    #  P L A C E   T E S T   C A S E S   H E R E
+    #  H E L P E R   M E T H O D S
+    ######################################################################
+
+    def _create_orders(self, count):
+        """Factory method to create orders in bulk"""
+        orders = []
+        for _ in range(count):
+            order = OrderFactory()
+            resp = self.client.post(BASE_URL, json=order.serialize())
+            self.assertEqual(
+                resp.status_code,
+                status.HTTP_201_CREATED,
+                "Could not create test Order",
+            )
+            new_order = resp.get_json()
+            order.id = new_order["id"]
+            orders.append(order)
+        return orders
+
+    ######################################################################
+    #  O R D E R   T E S T   C A S E S
     ######################################################################
 
     def test_index(self):
@@ -116,34 +136,23 @@ class TestOrderService(TestCase):
         #     [item.id for item in test_order.items],
         # )
 
-    def test_create_item(self):
-        """It should Create a new Item"""
-        test_item = ItemFactory()
-        logging.debug("Test Item: %s", test_item.serialize())
-        response = self.client.post(BASE_URL, json=test_item.serialize())
-        self.assertEqual(response.status_code, status.HTTP_201_CREATED)
+    def test_get_order_list(self):
+        """It should Get a list of Orders"""
+        self._create_orders(5)
+        resp = self.client.get(BASE_URL)
+        self.assertEqual(resp.status_code, status.HTTP_200_OK)
+        data = resp.get_json()
+        self.assertEqual(len(data), 5)
 
-        # Make sure location header is set
-        location = response.headers.get("Location", None)
-        self.assertIsNotNone(location)
+    def test_bad_request(self):
+        """It should not Create when sending the wrong data"""
+        resp = self.client.post(BASE_URL, json={"name": "not enough data"})
+        self.assertEqual(resp.status_code, status.HTTP_400_BAD_REQUEST)
 
-        # Check the data is correct
-        new_item = response.get_json()
-        self.assertEqual(new_item["name"], test_item.name)
-        self.assertEqual(new_item["category"], test_item.category)
-        self.assertEqual(new_item["description"], test_item.description)
-        self.assertEqual(new_item["price"], test_item.price)
-        self.assertEqual(new_item["quantity"], test_item.quantity)
-        self.assertEqual(new_item["order_id"], test_item.order_id)
-
-        # TODO: uncomment this code when get_items is implemented
-        # # Check that the location header was correct
-        # response = self.client.get(location)
-        # self.assertEqual(response.status_code, status.HTTP_200_OK)
-        # new_item = response.get_json()
-        # self.assertEqual(new_item["name"], test_item.name)
-        # self.assertEqual(new_item["category"], test_item.category)
-        # self.assertEqual(new_item["description"], test_item.description)
-        # self.assertEqual(new_item["price"], test_item.price)
-        # self.assertEqual(new_item["quantity"], test_item.quantity)
-        # self.assertEqual(new_item["order_id"], test_item.order_id)
+    def test_unsupported_media_type(self):
+        """It should not Create when sending wrong media type"""
+        order = OrderFactory()
+        resp = self.client.post(
+            BASE_URL, json=order.serialize(), content_type="test/html"
+        )
+        self.assertEqual(resp.status_code, status.HTTP_415_UNSUPPORTED_MEDIA_TYPE)
