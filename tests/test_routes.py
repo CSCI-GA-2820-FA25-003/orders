@@ -25,13 +25,14 @@ from unittest import TestCase
 from wsgi import app
 from service.common import status
 from service.models.order import db, Order
-from .factories import OrderFactory
+from .factories import OrderFactory, ItemFactory
 
 DATABASE_URI = os.getenv(
     "DATABASE_URI", "postgresql+psycopg://postgres:postgres@localhost:5432/testdb"
 )
 
 BASE_URL = "/orders"
+BASE_URL = "/items"
 
 
 ######################################################################
@@ -114,3 +115,35 @@ class TestOrderService(TestCase):
         #     [item["id"] for item in new_order["items"]],
         #     [item.id for item in test_order.items],
         # )
+
+    def test_create_item(self):
+        """It should Create a new Item"""
+        test_item = ItemFactory()
+        logging.debug("Test Item: %s", test_item.serialize())
+        response = self.client.post(BASE_URL, json=test_item.serialize())
+        self.assertEqual(response.status_code, status.HTTP_201_CREATED)
+
+        # Make sure location header is set
+        location = response.headers.get("Location", None)
+        self.assertIsNotNone(location)
+
+        # Check the data is correct
+        new_item = response.get_json()
+        self.assertEqual(new_item["name"], test_item.name)
+        self.assertEqual(new_item["category"], test_item.category)
+        self.assertEqual(new_item["description"], test_item.description)
+        self.assertEqual(new_item["price"], test_item.price)
+        self.assertEqual(new_item["quantity"], test_item.quantity)
+        self.assertEqual(new_item["order_id"], test_item.order_id)
+
+        # TODO: uncomment this code when get_items is implemented
+        # # Check that the location header was correct
+        # response = self.client.get(location)
+        # self.assertEqual(response.status_code, status.HTTP_200_OK)
+        # new_item = response.get_json()
+        # self.assertEqual(new_item["name"], test_item.name)
+        # self.assertEqual(new_item["category"], test_item.category)
+        # self.assertEqual(new_item["description"], test_item.description)
+        # self.assertEqual(new_item["price"], test_item.price)
+        # self.assertEqual(new_item["quantity"], test_item.quantity)
+        # self.assertEqual(new_item["order_id"], test_item.order_id)
