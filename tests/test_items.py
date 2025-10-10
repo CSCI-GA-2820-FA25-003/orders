@@ -184,3 +184,49 @@ class TestOrder(TestCase):
             + item3.price * item3.quantity
         )
         self.assertEqual(order.total_price, price)
+
+    def test_item_repr(self):
+        """__repr__ should include the name and id"""
+        order = OrderFactory()
+        order.create()
+        item = ItemFactory(order_id=order.id)
+        s = repr(item)
+        self.assertIn(item.name, s)
+        self.assertIn(str(item.id), s)
+
+    def test_item_deserialize_missing_field_raises(self):
+        """deserialize should raise DataValidationError on missing required key"""
+        order = OrderFactory()
+        order.create()
+        bad_payload = {
+            "id": 1,
+            # no "name" field
+            "category": "Books",
+            "description": "test",
+            "price": 12.34,
+            "order_id": order.id,
+            "quantity": 1,
+        }
+        with self.assertRaises(DataValidationError):
+            Item().deserialize(bad_payload)
+
+    def test_item_deserialize_no_body_raises(self):
+        """deserialize should raise DataValidationError when body is None"""
+        with self.assertRaises(DataValidationError):
+            Item().deserialize(None)
+
+    def test_item_all_and_find(self):
+        """all() and find() should return created items"""
+        order = OrderFactory()
+        order.create()
+        i1 = ItemFactory(order_id=order.id)
+        i2 = ItemFactory(order_id=order.id)
+        i1.create()
+        i2.create()
+
+        items = Item.all()
+        self.assertGreaterEqual(len(items), 2)
+
+        found = Item.find(i1.id)
+        self.assertIsNotNone(found)
+        self.assertEqual(found.id, i1.id)
