@@ -296,11 +296,24 @@ class TestOrderService(TestCase):
         self.assertEqual(data["price"], float(item.price))
         self.assertEqual(data["quantity"], item.quantity)
 
-        # # Check that the location header was correct by getting it
+        # Check that the location header was correct by getting it
         # resp = self.client.get(location, content_type="application/json")
         # self.assertEqual(resp.status_code, status.HTTP_200_OK)
         # new_item = resp.get_json()
         # self.assertEqual(new_item["name"], item.name, "Item name does not match")
+
+    def test_add_item_order_not_found(self):
+        """It should return 404 when adding an item to a non-existent order"""
+        # Create an item to add
+        item = ItemFactory()
+
+        # Attempt to add the item to a non-existent order
+        resp = self.client.post(
+            f"{BASE_URL}/99999/items",
+            json=item.serialize(),
+            content_type="application/json",
+        )
+        self.assertEqual(resp.status_code, status.HTTP_404_NOT_FOUND)
 
     def test_get_item(self):
         """It should Get an item from an order"""
@@ -333,3 +346,15 @@ class TestOrderService(TestCase):
         self.assertEqual(data["description"], item.description)
         self.assertEqual(data["price"], float(item.price))
         self.assertEqual(data["quantity"], item.quantity)
+
+    def test_get_item_not_found(self):
+        """It should return 404 when getting a non-existent item"""
+        # Create a known order
+        order = self._create_orders(1)[0]
+
+        # Attempt to get an item that doesn't exist
+        resp = self.client.get(
+            f"{BASE_URL}/{order.id}/items/99999",
+            content_type="application/json",
+        )
+        self.assertEqual(resp.status_code, status.HTTP_404_NOT_FOUND)
