@@ -171,6 +171,11 @@ def delete_orders(order_id):
 # ---------------------------------------------------------------------
 #                I T E M   M E T H O D S
 # ---------------------------------------------------------------------
+
+
+######################################################################
+# CREATE AN ITEM IN ORDER
+######################################################################
 @app.route("/orders/<int:order_id>/items", methods=["POST"])
 def create_items(order_id):
     """
@@ -206,6 +211,29 @@ def create_items(order_id):
     #     "get_items", order_id=order.id, item_id=item.id, _external=True
     # )
     return jsonify(message), status.HTTP_201_CREATED, {"Location": location_url}
+
+
+######################################################################
+# READ AN ITEM FROM ORDER
+######################################################################
+@app.route("/orders/<int:order_id>/items/<int:item_id>", methods=["GET"])
+def get_items(order_id, item_id):
+    """
+    Get an Item
+
+    This endpoint returns just an item
+    """
+    app.logger.info("Request to retrieve Item %s for Order id: %s", (item_id, order_id))
+
+    # See if the item exists and abort if it doesn't
+    item = Item.find(item_id)
+    if not item:
+        abort(
+            status.HTTP_404_NOT_FOUND,
+            f"Order with id '{item_id}' could not be found.",
+        )
+
+    return jsonify(item.serialize()), status.HTTP_200_OK
 
 
 ######################################################################

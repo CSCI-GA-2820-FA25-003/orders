@@ -232,40 +232,6 @@ class TestOrderService(TestCase):
         response = self.client.delete(f"{BASE_URL}/999")
         self.assertEqual(response.status_code, status.HTTP_404_NOT_FOUND)
 
-    ######################################################################
-    #  I T E M   T E S T   C A S E S
-    ######################################################################
-
-    def test_add_item(self):
-        """It should Add an item to an order"""
-        order = self._create_orders(1)[0]
-        item = ItemFactory()
-        resp = self.client.post(
-            f"{BASE_URL}/{order.id}/items",
-            json=item.serialize(),
-            content_type="application/json",
-        )
-        self.assertEqual(resp.status_code, status.HTTP_201_CREATED)
-
-        # Make sure location header is set
-        location = resp.headers.get("Location", None)
-        self.assertIsNotNone(location)
-
-        data = resp.get_json()
-        logging.debug(data)
-        self.assertEqual(data["order_id"], order.id)
-        self.assertEqual(data["name"], item.name)
-        self.assertEqual(data["category"], item.category)
-        self.assertEqual(data["description"], item.description)
-        self.assertEqual(data["price"], float(item.price))
-        self.assertEqual(data["quantity"], item.quantity)
-
-        # # Check that the location header was correct by getting it
-        # resp = self.client.get(location, content_type="application/json")
-        # self.assertEqual(resp.status_code, status.HTTP_200_OK)
-        # new_item = resp.get_json()
-        # self.assertEqual(new_item["name"], item.name, "Item name does not match")
-
     def test_get_order(self):
         """It should Get an Order by ID"""
         # create an Order to get
@@ -301,3 +267,94 @@ class TestOrderService(TestCase):
         with self.assertRaises(Exception):
             resp = self.client.get(f"{BASE_URL}/error")
             self.assertEqual(resp.status_code, status.HTTP_500_INTERNAL_SERVER_ERROR)
+
+    ######################################################################
+    #  I T E M   T E S T   C A S E S
+    ######################################################################
+
+    def test_add_item(self):
+        """It should Add an item to an order"""
+        order = self._create_orders(1)[0]
+        item = ItemFactory()
+        resp = self.client.post(
+            f"{BASE_URL}/{order.id}/items",
+            json=item.serialize(),
+            content_type="application/json",
+        )
+        self.assertEqual(resp.status_code, status.HTTP_201_CREATED)
+
+        # Make sure location header is set
+        location = resp.headers.get("Location", None)
+        self.assertIsNotNone(location)
+
+        data = resp.get_json()
+        logging.debug(data)
+        self.assertEqual(data["order_id"], order.id)
+        self.assertEqual(data["name"], item.name)
+        self.assertEqual(data["category"], item.category)
+        self.assertEqual(data["description"], item.description)
+        self.assertEqual(data["price"], float(item.price))
+        self.assertEqual(data["quantity"], item.quantity)
+
+        # Check that the location header was correct by getting it
+        # resp = self.client.get(location, content_type="application/json")
+        # self.assertEqual(resp.status_code, status.HTTP_200_OK)
+        # new_item = resp.get_json()
+        # self.assertEqual(new_item["name"], item.name, "Item name does not match")
+
+    def test_add_item_order_not_found(self):
+        """It should return 404 when adding an item to a non-existent order"""
+        # Create an item to add
+        item = ItemFactory()
+
+        # Attempt to add the item to a non-existent order
+        resp = self.client.post(
+            f"{BASE_URL}/99999/items",
+            json=item.serialize(),
+            content_type="application/json",
+        )
+        self.assertEqual(resp.status_code, status.HTTP_404_NOT_FOUND)
+
+    def test_get_item(self):
+        """It should Get an item from an order"""
+        # create a known item
+        order = self._create_orders(1)[0]
+        item = ItemFactory()
+        resp = self.client.post(
+            f"{BASE_URL}/{order.id}/items",
+            json=item.serialize(),
+            content_type="application/json",
+        )
+        self.assertEqual(resp.status_code, status.HTTP_201_CREATED)
+
+        data = resp.get_json()
+        logging.debug(data)
+        item_id = data["id"]
+
+        # retrieve it back
+        resp = self.client.get(
+            f"{BASE_URL}/{order.id}/items/{item_id}",
+            content_type="application/json",
+        )
+        self.assertEqual(resp.status_code, status.HTTP_200_OK)
+
+        data = resp.get_json()
+        logging.debug(data)
+        self.assertEqual(data["order_id"], order.id)
+        self.assertEqual(data["name"], item.name)
+        self.assertEqual(data["category"], item.category)
+        self.assertEqual(data["description"], item.description)
+        self.assertEqual(data["price"], float(item.price))
+        self.assertEqual(data["quantity"], item.quantity)
+
+    def test_get_item_not_found(self):
+        """It should return 404 when getting a non-existent item"""
+        # Create a known order
+        order = self._create_orders(1)[0]
+
+        # Attempt to get an item that doesn't exist
+        resp = self.client.get(
+            f"{BASE_URL}/{order.id}/items/99999",
+            content_type="application/json",
+        )
+        self.assertEqual(resp.status_code, status.HTTP_404_NOT_FOUND)
