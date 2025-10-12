@@ -96,7 +96,6 @@ class TestOrderService(TestCase):
         resp = self.client.get("/")
         self.assertEqual(resp.status_code, status.HTTP_200_OK)
 
-    # Todo: Add your test cases here...
     def test_create_order(self):
         """It should Create a new Order"""
         test_order = OrderFactory()
@@ -122,7 +121,6 @@ class TestOrderService(TestCase):
             [item.id for item in test_order.items],
         )
 
-        # TODO: uncomment this code when get_orders is implemented
         # # Check that the location header was correct
         # response = self.client.get(location)
         # self.assertEqual(response.status_code, status.HTTP_200_OK)
@@ -269,3 +267,39 @@ class TestOrderService(TestCase):
         # self.assertEqual(resp.status_code, status.HTTP_200_OK)
         # new_item = resp.get_json()
         # self.assertEqual(new_item["name"], item.name, "Item name does not match")
+        
+    def test_get_order(self):
+        """It should Get an Order by ID"""
+        # create an Order to get
+        test_order = OrderFactory()
+        resp = self.client.post(BASE_URL, json=test_order.serialize())
+        self.assertEqual(resp.status_code, status.HTTP_201_CREATED)
+        new_order = resp.get_json()
+        new_order_id = new_order["id"]
+
+        # get the order
+        resp = self.client.get(f"{BASE_URL}/{new_order_id}")
+        self.assertEqual(resp.status_code, status.HTTP_200_OK)
+        order = resp.get_json()
+        self.assertEqual(order["id"], new_order_id)
+        self.assertEqual(order["customer_id"], test_order.customer_id)
+        self.assertEqual(order["status"], test_order.status)
+        expected_total = sum(
+            float(item.price) * item.quantity for item in test_order.items
+        )
+        self.assertAlmostEqual(order["total_price"], expected_total, places=2)
+        self.assertListEqual(
+            [item["id"] for item in order["items"]],
+            [item.id for item in test_order.items],
+        )
+
+    def test_get_order_not_found(self):
+        """It should return 404 when the Order is not found"""
+        resp = self.client.get(f"{BASE_URL}/999")
+        self.assertEqual(resp.status_code, status.HTTP_404_NOT_FOUND)
+
+    def test_get_order_internal_server_error(self):
+        """It should return 500 when there is a server error"""
+        with self.assertRaises(Exception):
+            resp = self.client.get(f"{BASE_URL}/error")
+            self.assertEqual(resp.status_code, status.HTTP_500_INTERNAL_SERVER_ERROR)

@@ -5,10 +5,8 @@ All of the models are stored in this module
 """
 
 import logging
-from flask_sqlalchemy import SQLAlchemy
-from .persistent_base import PersistentBase, DataValidationError, db
-from .item import Item
 from enum import Enum
+from .persistent_base import PersistentBase, DataValidationError, db
 
 logger = logging.getLogger("flask.app")
 
@@ -45,10 +43,12 @@ class Order(db.Model, PersistentBase):
         return f" Order of the customer {self.customer_id} with order_id=[{self.id}]>"
 
     def create(self):
+        """Creates an Order to the database."""
         self.total_price = sum(float(item.price) * item.quantity for item in self.items)
         super().create()
 
     def update(self):
+        """Updates an Order in the database."""
         self.total_price = sum(float(item.price) * item.quantity for item in self.items)
         super().update()
 
@@ -102,13 +102,3 @@ class Order(db.Model, PersistentBase):
         """Finds a Order by it's ID"""
         logger.info("Processing lookup for id %s ...", by_id)
         return cls.query.session.get(cls, by_id)
-
-    @classmethod
-    def find_by_name(cls, name):
-        """Returns all Orders with the given name
-
-        Args:
-            name (string): the name of the Orders you want to match
-        """
-        logger.info("Processing name query for %s ...", name)
-        return cls.query.filter(cls.name == name)
