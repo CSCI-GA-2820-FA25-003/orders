@@ -21,7 +21,7 @@ This service implements a REST API that allows you to Create, Read, Update
 and Delete YourResourceModel
 """
 
-from flask import jsonify, request, abort
+from flask import jsonify, request, abort, url_for
 from flask import current_app as app  # Import Flask application
 from service.models.order import Order
 from service.common import status  # HTTP Status Codes
@@ -67,10 +67,7 @@ def create_orders():
     app.logger.info("Order with new id [%s] saved!", order.id)
 
     # Return the location of the new Order
-
-    # TODO: uncomment this code when get_orders is implemented
-    # location_url = url_for("get_orders", order_id=order.id, _external=True)
-    location_url = "unknown"
+    location_url = url_for("list_orders", order_id=order.id, _external=True)
     return (
         jsonify(order.serialize()),
         status.HTTP_201_CREATED,
@@ -104,7 +101,7 @@ def list_orders():
 # READ AN ORDER
 ######################################################################
 @app.route("/orders/<int:order_id>", methods=["GET"])
-def read_order(order_id):
+def get_orders(order_id):
     """
     Read an Order
 

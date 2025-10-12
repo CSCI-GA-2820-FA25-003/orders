@@ -95,7 +95,6 @@ class TestOrderService(TestCase):
         resp = self.client.get("/")
         self.assertEqual(resp.status_code, status.HTTP_200_OK)
 
-    # Todo: Add your test cases here...
     def test_create_order(self):
         """It should Create a new Order"""
         test_order = OrderFactory()
@@ -121,7 +120,6 @@ class TestOrderService(TestCase):
             [item.id for item in test_order.items],
         )
 
-        # TODO: uncomment this code when get_orders is implemented
         # # Check that the location header was correct
         # response = self.client.get(location)
         # self.assertEqual(response.status_code, status.HTTP_200_OK)

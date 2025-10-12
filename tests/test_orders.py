@@ -109,6 +109,7 @@ class TestOrder(TestCase):
             order.update()
 
     def test_delete(self):
+        """It should delete an Order"""
         order = OrderFactory()
         order.create()
         order.delete()
