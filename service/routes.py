@@ -201,7 +201,6 @@ def create_items(order_id):
     message = item.serialize()
     location_url = "unknown"
 
-    # TODO: uncomment this code when get_items is implemented
     # Send the location to GET the new item
     # location_url = url_for(
     #     "get_items", order_id=order.id, item_id=item.id, _external=True

@@ -260,7 +260,6 @@ class TestOrderService(TestCase):
         self.assertEqual(data["price"], float(item.price))
         self.assertEqual(data["quantity"], item.quantity)
 
-        # TODO: uncomment this code when get_items is implemented
         # # Check that the location header was correct by getting it
         # resp = self.client.get(location, content_type="application/json")
         # self.assertEqual(resp.status_code, status.HTTP_200_OK)
