@@ -101,6 +101,24 @@ def list_orders():
 
 
 ######################################################################
+# READ AN ORDER
+######################################################################
+@app.route("/orders/<int:order_id>", methods=["GET"])
+def read_order(order_id):
+    """
+    Read an Order
+
+    This endpoint will read an Order based the id that is specified in the path
+    """
+    app.logger.info("Request for order with id: %s", order_id)
+    # Retrieve the order from the database
+    order = Order.find(order_id)
+    if not order:
+        abort(status.HTTP_404_NOT_FOUND, f"Order with id '{order_id}' was not found.")
+
+    return jsonify(order.serialize()), status.HTTP_200_OK   
+
+######################################################################
 # UPDATE AN EXISTING ORDER
 ######################################################################
 @app.route("/orders/<int:order_id>", methods=["PUT"])

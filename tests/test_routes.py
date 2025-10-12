@@ -234,3 +234,28 @@ class TestOrderService(TestCase):
         # Try to delete a non-existent order
         response = self.client.delete(f"{BASE_URL}/999")
         self.assertEqual(response.status_code, status.HTTP_404_NOT_FOUND)
+
+    def test_get_order(self):
+        """It should Get an Order by ID"""
+        # create an Order to get
+        test_order = OrderFactory()
+        resp = self.client.post(BASE_URL, json=test_order.serialize())
+        self.assertEqual(resp.status_code, status.HTTP_201_CREATED)
+        new_order = resp.get_json()
+        new_order_id = new_order["id"]
+
+        # get the order
+        resp = self.client.get(f"{BASE_URL}/{new_order_id}")
+        self.assertEqual(resp.status_code, status.HTTP_200_OK)
+        order = resp.get_json()
+        self.assertEqual(order["id"], new_order_id)
+        self.assertEqual(order["customer_id"], test_order.customer_id)
+        self.assertEqual(order["status"], test_order.status)
+        expected_total = sum(
+            float(item.price) * item.quantity for item in test_order.items
+        )
+        self.assertAlmostEqual(order["total_price"], expected_total, places=2)
+        self.assertListEqual(
+            [item["id"] for item in order["items"]],
+            [item.id for item in test_order.items],
+        )
