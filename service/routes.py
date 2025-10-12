@@ -21,7 +21,7 @@ This service implements a REST API that allows you to Create, Read, Update
 and Delete YourResourceModel
 """
 
-from flask import jsonify, request, url_for, abort
+from flask import jsonify, request, abort
 from flask import current_app as app  # Import Flask application
 from service.models.order import Order
 from service.common import status  # HTTP Status Codes
@@ -116,11 +116,13 @@ def read_order(order_id):
     if not order:
         abort(status.HTTP_404_NOT_FOUND, f"Order with id '{order_id}' was not found.")
 
-    return jsonify(order.serialize()), status.HTTP_200_OK   
+    return jsonify(order.serialize()), status.HTTP_200_OK
 
 ######################################################################
 # UPDATE AN EXISTING ORDER
 ######################################################################
+
+
 @app.route("/orders/<int:order_id>", methods=["PUT"])
 def update_orders(order_id):
     """

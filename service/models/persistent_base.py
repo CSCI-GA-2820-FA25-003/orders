@@ -6,13 +6,16 @@ logger = logging.getLogger("flask.app")
 
 db = SQLAlchemy()
 
+
 class DataValidationError(Exception):
     """Used for an data validation errors when deserializing"""
-
+    ...
 
 ######################################################################
 #  P E R S I S T E N T   B A S E   M O D E L
 ######################################################################
+
+
 class PersistentBase:
     """Base class added persistent methods"""
 

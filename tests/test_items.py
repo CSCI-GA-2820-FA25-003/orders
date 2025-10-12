@@ -22,10 +22,9 @@ Test cases for Pet Model
 import os
 import logging
 from unittest import TestCase
-from unittest.mock import patch, MagicMock
 from wsgi import app
 from service.models.item import Item, DataValidationError, db
-from service.models.order import Order, OrderStatus
+from service.models.order import Order
 from .factories import OrderFactory, ItemFactory
 
 DATABASE_URI = os.getenv(

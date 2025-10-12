@@ -25,7 +25,6 @@ from unittest import TestCase
 from wsgi import app
 from service.common import status
 from service.models.order import db, Order
-from service.routes import check_content_type
 from .factories import OrderFactory
 
 DATABASE_URI = os.getenv(
@@ -264,7 +263,7 @@ class TestOrderService(TestCase):
         """It should return 404 when the Order is not found"""
         resp = self.client.get(f"{BASE_URL}/999")
         self.assertEqual(resp.status_code, status.HTTP_404_NOT_FOUND)
-      
+
     def test_get_order_internal_server_error(self):
         """It should return 500 when there is a server error"""
         with self.assertRaises(Exception):
