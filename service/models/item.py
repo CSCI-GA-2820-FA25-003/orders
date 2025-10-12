@@ -5,7 +5,6 @@ All of the models are stored in this module
 """
 
 import logging
-from flask_sqlalchemy import SQLAlchemy
 from .persistent_base import PersistentBase, DataValidationError, db
 
 logger = logging.getLogger("flask.app")
@@ -80,12 +79,6 @@ class Item(db.Model, PersistentBase):
         """Returns all of the Item in the database"""
         logger.info("Processing all Item")
         return cls.query.all()
-
-    @classmethod
-    def find(cls, by_id):
-        """Finds a Item by it's ID"""
-        logger.info("Processing lookup for id %s ...", by_id)
-        return cls.query.session.get(cls, by_id)
 
     @classmethod
     def find_by_name(cls, name):

@@ -21,11 +21,11 @@ Test cases for Pet Model
 # pylint: disable=duplicate-code
 import os
 import logging
-from unittest.mock import patch, MagicMock
+from unittest.mock import patch
 from unittest import TestCase
 from wsgi import app
 from service.models.order import Order, DataValidationError, db, OrderStatus
-from .factories import OrderFactory, ItemFactory
+from .factories import OrderFactory
 
 DATABASE_URI = os.getenv(
     "DATABASE_URI", "postgresql+psycopg://postgres:postgres@localhost:5432/testdb"
@@ -109,6 +109,7 @@ class TestOrder(TestCase):
             order.update()
 
     def test_delete(self):
+        """It should delete an Order"""
         order = OrderFactory()
         order.create()
         order.delete()
