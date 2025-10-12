@@ -23,8 +23,7 @@ and Delete YourResourceModel
 
 from flask import jsonify, request, url_for, abort
 from flask import current_app as app  # Import Flask application
-from service.models.order import Order
-from service.models.item import Item
+from service.models.order import Order, Item
 from service.common import status  # HTTP Status Codes
 
 
@@ -148,6 +147,47 @@ def delete_orders(order_id):
     app.logger.info("Order with id [%s] deleted!", order_id)
 
     return "", status.HTTP_204_NO_CONTENT
+
+
+# ---------------------------------------------------------------------
+#                I T E M   M E T H O D S
+# ---------------------------------------------------------------------
+@app.route("/orders/<int:order_id>/items", methods=["POST"])
+def create_items(order_id):
+    """
+    Create an Item on an Order
+
+    This endpoint will add an item to an order
+    """
+    app.logger.info("Request to create an Item for Order with id: %s", order_id)
+    check_content_type("application/json")
+
+    # See if the order exists and abort if it doesn't
+    order = Order.find(order_id)
+    if not order:
+        abort(
+            status.HTTP_404_NOT_FOUND,
+            f"Order with id '{order_id}' could not be found.",
+        )
+
+    # Create an item from the json data
+    item = Item()
+    item.deserialize(request.get_json())
+
+    # Append the item to the order
+    order.items.append(item)
+    order.update()
+
+    # Prepare a message to return
+    message = item.serialize()
+    location_url = "unknown"
+
+    # TODO: uncomment this code when get_items is implemented
+    # Send the location to GET the new item
+    # location_url = url_for(
+    #     "get_items", order_id=order.id, item_id=item.id, _external=True
+    # )
+    return jsonify(message), status.HTTP_201_CREATED, {"Location": location_url}
 
 
 ######################################################################

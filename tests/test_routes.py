@@ -26,7 +26,7 @@ from wsgi import app
 from service.common import status
 from service.models.order import db, Order
 from service.routes import check_content_type
-from .factories import OrderFactory
+from .factories import OrderFactory, ItemFactory
 
 DATABASE_URI = os.getenv(
     "DATABASE_URI", "postgresql+psycopg://postgres:postgres@localhost:5432/testdb"
@@ -235,3 +235,38 @@ class TestOrderService(TestCase):
         # Try to delete a non-existent order
         response = self.client.delete(f"{BASE_URL}/999")
         self.assertEqual(response.status_code, status.HTTP_404_NOT_FOUND)
+
+    ######################################################################
+    #  I T E M   T E S T   C A S E S
+    ######################################################################
+
+    def test_add_item(self):
+        """It should Add an item to an order"""
+        order = self._create_orders(1)[0]
+        item = ItemFactory()
+        resp = self.client.post(
+            f"{BASE_URL}/{order.id}/items",
+            json=item.serialize(),
+            content_type="application/json",
+        )
+        self.assertEqual(resp.status_code, status.HTTP_201_CREATED)
+
+        # Make sure location header is set
+        location = resp.headers.get("Location", None)
+        self.assertIsNotNone(location)
+
+        data = resp.get_json()
+        logging.debug(data)
+        self.assertEqual(data["order_id"], order.id)
+        self.assertEqual(data["name"], item.name)
+        self.assertEqual(data["category"], item.category)
+        self.assertEqual(data["description"], item.description)
+        self.assertEqual(data["price"], float(item.price))
+        self.assertEqual(data["quantity"], item.quantity)
+
+        # TODO: uncomment this code when get_items is implemented
+        # # Check that the location header was correct by getting it
+        # resp = self.client.get(location, content_type="application/json")
+        # self.assertEqual(resp.status_code, status.HTTP_200_OK)
+        # new_item = resp.get_json()
+        # self.assertEqual(new_item["name"], item.name, "Item name does not match")
