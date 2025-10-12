@@ -25,7 +25,6 @@ from unittest import TestCase
 from wsgi import app
 from service.common import status
 from service.models.order import db, Order
-from service.routes import check_content_type
 from .factories import OrderFactory, ItemFactory
 
 DATABASE_URI = os.getenv(
@@ -267,7 +266,7 @@ class TestOrderService(TestCase):
         # self.assertEqual(resp.status_code, status.HTTP_200_OK)
         # new_item = resp.get_json()
         # self.assertEqual(new_item["name"], item.name, "Item name does not match")
-        
+
     def test_get_order(self):
         """It should Get an Order by ID"""
         # create an Order to get
