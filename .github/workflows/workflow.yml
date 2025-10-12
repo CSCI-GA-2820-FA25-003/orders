@@ -47,6 +47,18 @@ jobs:
           flake8 service tests --count --max-complexity=10 --max-line-length=127 --statistics
           # Run pylint to catch other PEP8 errors
           pylint service tests --max-line-length=127
+      - name: Wait for Postgres
+        run: |
+          until pg_isready -h postgres -p 5432 -U postgres; do
+            echo "Waiting for Postgres..."
+            sleep 2
+          done
+      - name: Initialize database
+        run: |
+          python -c "from service import app; from service.models import db;
+          with app.app_context(): db.create_all()"
+        env:
+          DATABASE_URI: "postgresql+psycopg://postgres:pgs3cr3t@postgres:5432/postgres"
 
       - name: Run unit tests with PyTest
         run: pytest --pspec --cov=service --cov-fail-under=95 --cov-report=xml
