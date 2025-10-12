@@ -47,20 +47,31 @@ jobs:
           flake8 service tests --count --max-complexity=10 --max-line-length=127 --statistics
           # Run pylint to catch other PEP8 errors
           pylint service tests --max-line-length=127
-      - name: Initialize database
+      - name: Wait for database
+        run: sleep 5  # Give PostgreSQL some time to start
+
+      - name: Create database
         run: |
-          python -c "from service import create_app; app = create_app(); 
-          from service.models.order import db; 
-          with app.app_context(): db.create_all()"
+          PGPASSWORD=pgs3cr3t psql -h postgres -U postgres -c "CREATE DATABASE test_db;"
+          python -c "
+          from service import create_app
+          from service.models import db
+          app = create_app()
+          with app.app_context():
+              db.create_all()
+              db.session.commit()"
         env:
           FLASK_APP: "service:create_app"
           FLASK_ENV: "testing"
-          DATABASE_URI: "postgresql+psycopg://postgres:pgs3cr3t@postgres:5432/postgres"
+          DATABASE_URI: "postgresql+psycopg://postgres:pgs3cr3t@postgres:5432/test_db"
 
       - name: Run unit tests with PyTest
-        run: pytest --pspec --cov=service --cov-fail-under=95 --cov-report=xml
+        run: |
+          pytest --pspec --cov=service --cov-fail-under=95 --cov-report=xml -v
         env:
-          DATABASE_URI: "postgresql+psycopg://postgres:pgs3cr3t@postgres:5432/postgres"
+          FLASK_APP: "service:create_app"
+          FLASK_ENV: "testing"
+          DATABASE_URI: "postgresql+psycopg://postgres:pgs3cr3t@postgres:5432/test_db"
       ######################################################################
       # Create a CODECOV_TOKEN in Settings->Secrets and variables->Actions
       # and then uncomment the CodeCov action during hands-on lab
