@@ -21,8 +21,6 @@ jobs:
         env:
           POSTGRES_PASSWORD: pgs3cr3t
           POSTGRES_DB: test_db
-        ports:
-          - 5432:5432
         # Set health checks to wait until redis has started
         options: >-
           --health-cmd="pg_isready -U postgres"
@@ -48,17 +46,37 @@ jobs:
           flake8 service tests --count --max-complexity=10 --max-line-length=127 --statistics
           # Run pylint to catch other PEP8 errors
           pylint service tests --max-line-length=127
-      - name: Wait for database
-        run: sleep 5  # Give PostgreSQL some time to start
 
-      - name: Create database
+      - name: Install PostgreSQL client
+        run: |
+          apt-get update
+          apt-get install -y postgresql-client
+
+      - name: Wait for PostgreSQL
+        run: |
+          until pg_isready -h postgres -U postgres; do
+            echo "Waiting for PostgreSQL..."
+            sleep 1
+          done
+
+      - name: Create database tables
         run: |
           python -c "
           from service import create_app
           from service.models import db
+          from service.models.order import Order
+          from service.models.item import Item
+          
           app = create_app()
           with app.app_context():
+              # Drop all tables first to ensure clean state
+              db.drop_all()
+              # Create all tables
               db.create_all()
+              # Verify tables were created
+              print('\n=== Database Tables ===')
+              print(db.metadata.tables.keys())
+              print('======================\n')
               db.session.commit()"
         env:
           FLASK_APP: "service:create_app"
