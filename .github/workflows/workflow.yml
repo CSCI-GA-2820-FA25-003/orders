@@ -20,6 +20,7 @@ jobs:
         image: postgres:15-alpine
         env:
           POSTGRES_PASSWORD: pgs3cr3t
+          POSTGRES_DB: test_db
         ports:
           - 5432:5432
         # Set health checks to wait until redis has started
@@ -52,7 +53,6 @@ jobs:
 
       - name: Create database
         run: |
-          PGPASSWORD=pgs3cr3t psql -h postgres -U postgres -c "CREATE DATABASE test_db;"
           python -c "
           from service import create_app
           from service.models import db
