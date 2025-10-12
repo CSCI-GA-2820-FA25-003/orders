@@ -23,7 +23,8 @@ and Delete YourResourceModel
 
 from flask import jsonify, request, abort, url_for
 from flask import current_app as app  # Import Flask application
-from service.models.order import Order, Item
+from service.models.order import Order
+from service.models.item import Item
 from service.common import status  # HTTP Status Codes
 
 
@@ -114,6 +115,7 @@ def get_orders(order_id):
         abort(status.HTTP_404_NOT_FOUND, f"Order with id '{order_id}' was not found.")
 
     return jsonify(order.serialize()), status.HTTP_200_OK
+
 
 ######################################################################
 # UPDATE AN EXISTING ORDER
