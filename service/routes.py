@@ -236,7 +236,7 @@ def check_content_type(content_type) -> None:
 
 
 ######################################################################
-# READ AN ITEM FROM ACCOUNT
+# READ AN ITEM FROM ORDER
 ######################################################################
 @app.route("/orders/<int:order_id>/items/<int:item_id>", methods=["GET"])
 def get_items(order_id, item_id):
