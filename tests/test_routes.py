@@ -259,3 +259,14 @@ class TestOrderService(TestCase):
             [item["id"] for item in order["items"]],
             [item.id for item in test_order.items],
         )
+
+    def test_get_order_not_found(self):
+        """It should return 404 when the Order is not found"""
+        resp = self.client.get(f"{BASE_URL}/999")
+        self.assertEqual(resp.status_code, status.HTTP_404_NOT_FOUND)
+      
+    def test_get_order_internal_server_error(self):
+        """It should return 500 when there is a server error"""
+        with self.assertRaises(Exception):
+            resp = self.client.get(f"{BASE_URL}/error")
+            self.assertEqual(resp.status_code, status.HTTP_500_INTERNAL_SERVER_ERROR)
