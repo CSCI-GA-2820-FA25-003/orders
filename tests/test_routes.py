@@ -33,7 +33,6 @@ DATABASE_URI = os.getenv(
 )
 
 BASE_URL = "/orders"
-BASE_URL = "/items"
 
 
 ######################################################################
