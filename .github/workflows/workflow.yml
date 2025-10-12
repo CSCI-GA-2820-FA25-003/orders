@@ -49,9 +49,12 @@ jobs:
           pylint service tests --max-line-length=127
       - name: Initialize database
         run: |
-          python -c "from service import app; from service.models import db;
+          python -c "from service import create_app; app = create_app(); 
+          from service.models.order import db; 
           with app.app_context(): db.create_all()"
         env:
+          FLASK_APP: "service:create_app"
+          FLASK_ENV: "testing"
           DATABASE_URI: "postgresql+psycopg://postgres:pgs3cr3t@postgres:5432/postgres"
 
       - name: Run unit tests with PyTest
