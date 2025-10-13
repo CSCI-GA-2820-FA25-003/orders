@@ -174,7 +174,7 @@ def delete_orders(order_id):
 
 
 ######################################################################
-# CREATE AN ITEM IN ORDER
+# CREATE AN ITEM
 ######################################################################
 @app.route("/orders/<int:order_id>/items", methods=["POST"])
 def create_items(order_id):
@@ -214,7 +214,7 @@ def create_items(order_id):
 
 
 ######################################################################
-# READ AN ITEM FROM ORDER
+# READ AN ITEM
 ######################################################################
 @app.route("/orders/<int:order_id>/items/<int:item_id>", methods=["GET"])
 def get_items(order_id, item_id):
@@ -232,6 +232,35 @@ def get_items(order_id, item_id):
             status.HTTP_404_NOT_FOUND,
             f"Order with id '{item_id}' could not be found.",
         )
+
+    return jsonify(item.serialize()), status.HTTP_200_OK
+
+
+######################################################################
+# UPDATE AN ITEM
+######################################################################
+@app.route("/orders/<int:order_id>/items/<int:item_id>", methods=["PUT"])
+def update_items(order_id, item_id):
+    """
+    Update an Item
+
+    This endpoint will update an Item based the body that is posted
+    """
+    app.logger.info("Request to update Item %s for Order id: %s", (item_id, order_id))
+    check_content_type("application/json")
+
+    # See if the item exists and abort if it doesn't
+    item = Item.find(item_id)
+    if not item:
+        abort(
+            status.HTTP_404_NOT_FOUND,
+            f"Order with id '{item_id}' could not be found.",
+        )
+
+    # Update from the json in the body of the request
+    item.deserialize(request.get_json())
+    item.id = item_id
+    item.update()
 
     return jsonify(item.serialize()), status.HTTP_200_OK
 
