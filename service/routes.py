@@ -29,13 +29,28 @@ from service.common import status  # HTTP Status Codes
 
 
 ######################################################################
+# GET HEALTH CHECK
+######################################################################
+@app.route("/health")
+def health_check():
+    """Let them know our heart is still beating"""
+    return jsonify(status=200, message="Healthy"), status.HTTP_200_OK
+
+
+######################################################################
 # GET INDEX
 ######################################################################
 @app.route("/")
 def index():
-    """Root URL response"""
+    """Root URL response for Orders Service"""
+    app.logger.info("Request for the root URL")
+
     return (
-        "Reminder: return some useful information in json format about the service here",
+        jsonify(
+            name="Orders REST API Service",
+            version="1.0",
+            paths=url_for("list_orders", _external=True),
+        ),
         status.HTTP_200_OK,
     )
 
