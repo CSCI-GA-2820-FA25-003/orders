@@ -386,7 +386,6 @@ class TestOrderService(TestCase):
         )
         self.assertEqual(resp.status_code, status.HTTP_404_NOT_FOUND)
 
-
     def test_update_item(self):
         """It should Update an item on an order"""
         # create a known item

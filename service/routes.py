@@ -235,6 +235,7 @@ def get_items(order_id, item_id):
 
     return jsonify(item.serialize()), status.HTTP_200_OK
 
+
 ######################################################################
 # DELETE AN ITEM
 ######################################################################
@@ -245,9 +246,7 @@ def delete_items(order_id, item_id):
 
     This endpoint will delete an Item based on the id specified in the path
     """
-    app.logger.info(
-        "Request to delete Item %s for Order id: %s", (item_id, order_id)
-    )
+    app.logger.info("Request to delete Item %s for Order id: %s", (item_id, order_id))
 
     # See if the item exists and delete it if it does
     item = Item.find(item_id)
