@@ -86,19 +86,3 @@ class Order(db.Model, PersistentBase):
                 "Invalid Order: body of request contained bad or no data " + str(error)
             ) from error
         return self
-
-    ##################################################
-    # CLASS METHODS
-    ##################################################
-
-    @classmethod
-    def all(cls):
-        """Returns all of the Orders in the database"""
-        logger.info("Processing all Orders")
-        return cls.query.all()
-
-    @classmethod
-    def find(cls, by_id):
-        """Finds a Order by it's ID"""
-        logger.info("Processing lookup for id %s ...", by_id)
-        return cls.query.session.get(cls, by_id)

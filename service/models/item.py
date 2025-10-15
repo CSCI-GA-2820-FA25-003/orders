@@ -73,13 +73,6 @@ class Item(db.Model, PersistentBase):
     ##################################################
     # CLASS METHODS
     ##################################################
-
-    @classmethod
-    def all(cls):
-        """Returns all of the Item in the database"""
-        logger.info("Processing all Item")
-        return cls.query.all()
-
     @classmethod
     def find_by_name(cls, name):
         """Returns all Item with the given name
