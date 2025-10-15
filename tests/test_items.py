@@ -111,6 +111,7 @@ class TestOrder(TestCase):
         self.assertEqual(order.items[0].quantity, 3)
         self.assertEqual(order.items[0].name, item.name)
         self.assertEqual(order.items[0].description, item.description)
+        self.assertEqual(order.items[0].product_id, item.product_id)
         self.assertEqual(order.items[0].price, item.price)
         self.assertEqual(order.items[0].category, item.category)
 
@@ -146,6 +147,7 @@ class TestOrder(TestCase):
         self.assertEqual(serial_item["name"], item.name)
         self.assertEqual(serial_item["category"], item.category)
         self.assertEqual(serial_item["description"], item.description)
+        self.assertEqual(serial_item["product_id"], item.product_id)
         self.assertEqual(serial_item["price"], float(item.price))
         self.assertEqual(serial_item["order_id"], item.order_id)
         self.assertEqual(serial_item["quantity"], item.quantity)
@@ -165,6 +167,7 @@ class TestOrder(TestCase):
         self.assertEqual(new_item.name, item.name)
         self.assertEqual(new_item.category, item.category)
         self.assertEqual(new_item.description, item.description)
+        self.assertEqual(new_item.product_id, item.product_id)
         self.assertEqual(float(new_item.price), float(item.price))
         self.assertEqual(new_item.order_id, item.order_id)
         self.assertEqual(new_item.quantity, item.quantity)
@@ -202,6 +205,7 @@ class TestOrder(TestCase):
             # no "name" field
             "category": "Books",
             "description": "test",
+            "product_id": 1234,
             "price": 12.34,
             "order_id": order.id,
             "quantity": 1,

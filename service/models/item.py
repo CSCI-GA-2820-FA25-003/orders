@@ -10,7 +10,7 @@ from .persistent_base import PersistentBase, DataValidationError, db
 logger = logging.getLogger("flask.app")
 
 
-class Item(db.Model, PersistentBase):
+class Item(db.Model, PersistentBase):  # pylint: disable=too-many-instance-attributes
     """
     Class that represents an Item
     """
@@ -23,6 +23,7 @@ class Item(db.Model, PersistentBase):
     id = db.Column(db.Integer, primary_key=True)
     name = db.Column(db.String(63))
     category = db.Column(db.String(63))
+    product_id = db.Column(db.BigInteger, nullable=False)
     description = db.Column(db.String(1023))
     price = db.Column(db.Numeric(14, 2), nullable=False)
     quantity = db.Column(db.Integer, nullable=False, default=1)
@@ -38,6 +39,7 @@ class Item(db.Model, PersistentBase):
             "name": self.name,
             "category": self.category,
             "description": self.description,
+            "product_id": self.product_id,
             "price": float(self.price),
             "order_id": self.order_id,
             "quantity": self.quantity,
@@ -56,6 +58,7 @@ class Item(db.Model, PersistentBase):
             self.category = data["category"]
             self.description = data["description"]
             self.price = data["price"]
+            self.product_id = data["product_id"]
             self.order_id = data["order_id"]
             self.quantity = data.get("quantity", 1)
         except AttributeError as error:

@@ -293,6 +293,7 @@ class TestOrderService(TestCase):
         self.assertEqual(data["name"], item.name)
         self.assertEqual(data["category"], item.category)
         self.assertEqual(data["description"], item.description)
+        self.assertEqual(data["product_id"], item.product_id)
         self.assertEqual(data["price"], float(item.price))
         self.assertEqual(data["quantity"], item.quantity)
 
@@ -344,6 +345,7 @@ class TestOrderService(TestCase):
         self.assertEqual(data["name"], item.name)
         self.assertEqual(data["category"], item.category)
         self.assertEqual(data["description"], item.description)
+        self.assertEqual(data["product_id"], item.product_id)
         self.assertEqual(data["price"], float(item.price))
         self.assertEqual(data["quantity"], item.quantity)
 
