@@ -83,4 +83,3 @@ class PersistentBase:
         logger.info("Processing lookup for id %s ...", by_id)
         # pylint: disable=no-member
         return cls.query.session.get(cls, by_id)
-        
