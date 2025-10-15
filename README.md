@@ -1,63 +1,177 @@
-# NYU DevOps Project Template
+# Orders Service
 
+[![Build Status](https://github.com/CSCI-GA-2820-FA25-003/orders/actions/workflows/workflow.yml/badge.svg)](https://github.com/CSCI-GA-2820-FA25-003/orders/actions)
 [![License](https://img.shields.io/badge/License-Apache_2.0-blue.svg)](https://opensource.org/licenses/Apache-2.0)
 [![Python](https://img.shields.io/badge/Language-Python-blue.svg)](https://python.org/)
-
-This is a skeleton you can use to start your projects.
-
-**Note:** _Feel free to overwrite this `README.md` file with the one that describes your project._
+[![codecov](https://codecov.io/gh/CSCI-GA-2820-FA25-003/orders/branch/master/graph/badge.svg)](https://codecov.io/gh/CSCI-GA-2820-FA25-003/orders)
 
 ## Overview
 
-This project template contains starter code for your class project. The `/service` folder contains your `models.py` file for your model and a `routes.py` file for your service. The `/tests` folder has test case starter code for testing the model and the service separately. All you need to do is add your functionality. You can use the [lab-flask-tdd](https://github.com/nyu-devops/lab-flask-tdd) for code examples to copy from.
+This is a RESTful microservice for managing orders and their associated items. The service is built using Flask and SQLAlchemy with PostgreSQL as the database. It provides a complete CRUD (Create, Read, Update, Delete) API for orders and items, following RESTful design principles and DevOps best practices.
 
-## Automatic Setup
+## Features
 
-The best way to use this repo is to start your own repo using it as a git template. To do this just press the green **Use this template** button in GitHub and this will become the source for your repository.
+- **Order Management**: Create, read, update, and delete orders
+- **Item Management**: Manage items within orders with full CRUD operations
+- **Order Status Tracking**: Support for order statuses (PENDING, SHIPPED, DELIVERED, CANCELED)
+- **Automatic Price Calculation**: Total price automatically calculated based on items
+- **RESTful API**: Clean, intuitive API design
+- **PostgreSQL Database**: Robust data persistence with relational integrity
+- **Comprehensive Testing**: Full test coverage with pytest
+- **CI/CD Pipeline**: Automated testing and deployment with GitHub Actions
 
-## Manual Setup
+## Technology Stack
 
-You can also clone this repository and then copy and paste the starter code into your project repo folder on your local computer. Be careful not to copy over your own `README.md` file so be selective in what you copy.
+- **Framework**: Flask 3.1.1
+- **Database**: PostgreSQL with SQLAlchemy ORM
+- **Testing**: pytest, pytest-cov
+- **Code Quality**: pylint, flake8, black
+- **Web Server**: Gunicorn
+- **Python Version**: 3.11
 
-There are 4 hidden files that you will need to copy manually if you use the Mac Finder or Windows Explorer to copy files from this folder into your repo folder.
+## API Endpoints
 
-These should be copied using a bash shell as follows:
+### Health & Info
 
-```bash
-    cp .gitignore  ../<your_repo_folder>/
-    cp .flaskenv ../<your_repo_folder>/
-    cp .gitattributes ../<your_repo_folder>/
-```
+| Endpoint  | Method | Description                     |
+| --------- | ------ | ------------------------------- |
+| `/health` | GET    | Health check endpoint           |
+| `/`       | GET    | Service information and version |
 
-## Contents
+### Order Operations
 
-The project contains the following:
+| Endpoint             | Method | Description                                         |
+| -------------------- | ------ | --------------------------------------------------- |
+| `/orders`            | POST   | Create a new order                                  |
+| `/orders`            | GET    | List all orders (supports `?name=` query parameter) |
+| `/orders/<order_id>` | GET    | Retrieve a specific order by ID                     |
+| `/orders/<order_id>` | PUT    | Update an existing order                            |
+| `/orders/<order_id>` | DELETE | Delete an order                                     |
+
+### Item Operations
+
+| Endpoint                             | Method | Description                |
+| ------------------------------------ | ------ | -------------------------- |
+| `/orders/<order_id>/items`           | POST   | Add an item to an order    |
+| `/orders/<order_id>/items`           | GET    | List all items in an order |
+| `/orders/<order_id>/items/<item_id>` | GET    | Get a specific item        |
+| `/orders/<order_id>/items/<item_id>` | PUT    | Update an item             |
+| `/orders/<order_id>/items/<item_id>` | DELETE | Delete an item             |
+
+## Data Models
+
+### Order Model
+
+- `id`: Integer (Primary Key)
+- `customer_id`: Integer (Required)
+- `status`: Enum (PENDING, SHIPPED, DELIVERED, CANCELED)
+- `total_price`: Float (Auto-calculated)
+- `items`: Relationship to Item model
+
+### Item Model
+
+- `id`: Integer (Primary Key)
+- `name`: String (63 chars)
+- `category`: String (63 chars)
+- `description`: String (1023 chars)
+- `price`: Numeric (14, 2)
+- `quantity`: Integer (Default: 1)
+- `order_id`: Foreign Key to Order
+
+## Project Structure
 
 ```text
-.gitignore          - this will ignore vagrant and other metadata files
-.flaskenv           - Environment variables to configure Flask
-.gitattributes      - File to gix Windows CRLF issues
-.devcontainers/     - Folder with support for VSCode Remote Containers
-dot-env-example     - copy to .env to use environment variables
-pyproject.toml      - Poetry list of Python libraries required by your code
+.
+├── service/                   # Service application package
+│   ├── __init__.py           # Application factory
+│   ├── config.py             # Configuration settings
+│   ├── routes.py             # API route definitions
+│   ├── models/               # Data models
+│   │   ├── order.py          # Order model
+│   │   ├── item.py           # Item model
+│   │   └── persistent_base.py # Base model class
+│   └── common/               # Shared utilities
+│       ├── cli_commands.py   # CLI commands
+│       ├── error_handlers.py # Error handling
+│       ├── log_handlers.py   # Logging configuration
+│       └── status.py         # HTTP status codes
+├── tests/                    # Test suite
+│   ├── test_routes.py        # API endpoint tests
+│   ├── test_models.py        # Model tests
+│   └── factories.py          # Test data factories
+├── .github/workflows/        # CI/CD configuration
+├── Pipfile                   # Python dependencies
+└── wsgi.py                   # WSGI entry point
+```
 
-service/                   - service python package
-├── __init__.py            - package initializer
-├── config.py              - configuration parameters
-├── models.py              - module with business models
-├── routes.py              - module with service routes
-└── common                 - common code package
-    ├── cli_commands.py    - Flask command to recreate all tables
-    ├── error_handlers.py  - HTTP error handling code
-    ├── log_handlers.py    - logging setup code
-    └── status.py          - HTTP status constants
+## Getting Started
 
-tests/                     - test cases package
-├── __init__.py            - package initializer
-├── factories.py           - Factory for testing with fake objects
-├── test_cli_commands.py   - test suite for the CLI
-├── test_models.py         - test suite for business models
-└── test_routes.py         - test suite for service routes
+### Prerequisites
+
+- Python 3.11
+- PostgreSQL
+- pipenv
+
+### Installation
+
+1. Clone the repository:
+
+```bash
+git clone https://github.com/CSCI-GA-2820-FA25-003/orders.git
+cd orders
+```
+
+2. Install dependencies:
+
+```bash
+pipenv install --dev
+```
+
+3. Set up environment variables:
+
+```bash
+cp dot-env-example .env
+# Edit .env with your configuration
+```
+
+4. Initialize the database:
+
+```bash
+flask db-create
+```
+
+### Running the Service
+
+Development mode:
+
+```bash
+honcho start
+```
+
+Production mode:
+
+```bash
+gunicorn --bind 0.0.0.0:8080 --log-level=info wsgi:app
+```
+
+### Running Tests
+
+Run all tests:
+
+```bash
+pytest
+```
+
+Run with coverage:
+
+```bash
+pytest --cov=service --cov-report=term-missing
+```
+
+Run linting:
+
+```bash
+make lint
 ```
 
 ## License
