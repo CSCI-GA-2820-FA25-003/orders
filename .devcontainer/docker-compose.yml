@@ -9,9 +9,11 @@ services:
       dockerfile: .devcontainer/Dockerfile    
     hostname: nyu
     container_name: nyu-project
+    ports:
+      - "8080:8080"
     volumes:
       - ..:/app
-    command: sleep infinity
+    command: make run
     environment:
       PORT: 8080
       FLASK_APP: wsgi:app
