@@ -412,3 +412,50 @@ class TestOrderService(TestCase):
             content_type="application/json",
         )
         self.assertEqual(resp.status_code, status.HTTP_404_NOT_FOUND)
+
+    def test_list_items(self):
+        """It should List all items in an order"""
+        # Create an order
+        order = self._create_orders(1)[0]
+
+        # Create multiple items for this order
+        items = []
+        for _ in range(3):
+            item = ItemFactory()
+            resp = self.client.post(
+                f"{BASE_URL}/{order.id}/items",
+                json=item.serialize(),
+                content_type="application/json",
+            )
+            self.assertEqual(resp.status_code, status.HTTP_201_CREATED)
+            items.append(resp.get_json())
+
+        # List all items for this order
+        resp = self.client.get(f"{BASE_URL}/{order.id}/items")
+        self.assertEqual(resp.status_code, status.HTTP_200_OK)
+
+        data = resp.get_json()
+        self.assertEqual(len(data), 3)
+
+        # Verify all items belong to the correct order
+        for item_data in data:
+            self.assertEqual(item_data["order_id"], order.id)
+
+    def test_list_items_empty_order(self):
+        """It should return empty list for order with no items"""
+        # Create an order without items
+        order = self._create_orders(1)[0]
+
+        # List items for this order
+        resp = self.client.get(f"{BASE_URL}/{order.id}/items")
+        self.assertEqual(resp.status_code, status.HTTP_200_OK)
+
+        data = resp.get_json()
+        self.assertEqual(len(data), 0)
+        self.assertIsInstance(data, list)
+
+    def test_list_items_order_not_found(self):
+        """It should return 404 when listing items for non-existent order"""
+        # Attempt to list items for a non-existent order
+        resp = self.client.get(f"{BASE_URL}/99999/items")
+        self.assertEqual(resp.status_code, status.HTTP_404_NOT_FOUND)
