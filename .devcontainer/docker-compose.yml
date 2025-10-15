@@ -13,7 +13,7 @@ services:
       - "8080:8080"
     volumes:
       - ..:/app
-    command: make run
+    command: sleep infinity
     environment:
       PORT: 8080
       FLASK_APP: wsgi:app
