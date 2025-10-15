@@ -89,3 +89,13 @@ class Item(db.Model, PersistentBase):
         """
         logger.info("Processing name query for %s ...", name)
         return cls.query.filter(cls.name == name)
+
+    @classmethod
+    def find_by_order_id(cls, order_id):
+        """Returns all Items with the given order_id
+
+        Args:
+            order_id (int): the order_id of the Items you want to match
+        """
+        logger.info("Processing order_id query for %s ...", order_id)
+        return cls.query.filter(cls.order_id == order_id)

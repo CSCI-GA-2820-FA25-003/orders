@@ -214,6 +214,35 @@ def create_items(order_id):
 
 
 ######################################################################
+# LIST ALL ITEMS IN AN ORDER
+######################################################################
+@app.route("/orders/<int:order_id>/items", methods=["GET"])
+def list_items(order_id):
+    """
+    List all Items in an Order
+
+    This endpoint returns all items associated with a specific order
+    """
+    app.logger.info("Request to list Items for Order id: %s", order_id)
+
+    # See if the order exists and abort if it doesn't
+    order = Order.find(order_id)
+    if not order:
+        abort(
+            status.HTTP_404_NOT_FOUND,
+            f"Order with id '{order_id}' could not be found.",
+        )
+
+    # Get all items for this order
+    items = Item.find_by_order_id(order_id)
+
+    # Return as an array of dictionaries
+    results = [item.serialize() for item in items]
+
+    return jsonify(results), status.HTTP_200_OK
+
+
+######################################################################
 # READ AN ITEM
 ######################################################################
 @app.route("/orders/<int:order_id>/items/<int:item_id>", methods=["GET"])
