@@ -42,6 +42,7 @@ class ItemFactory(Factory):
     id = Sequence(lambda n: n + 1)
     name = Faker("word")
     category = Faker("word")
+    product_id = LazyFunction(lambda: random.randint(1000, 9999))
     description = Faker("sentence")
     price = LazyFunction(lambda: Decimal(0.0))
     quantity = LazyFunction(lambda: random.randint(1, 5))
