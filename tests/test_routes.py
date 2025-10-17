@@ -114,7 +114,7 @@ class TestOrderService(TestCase):
         expected_total = sum(
             float(item.price) * item.quantity for item in test_order.items
         )
-        self.assertAlmostEqual(new_order["total_price"], expected_total, places=2)
+        self.assertEqual(new_order["total_price"], expected_total)
         self.assertListEqual(
             [item["id"] for item in new_order["items"]],
             [item.id for item in test_order.items],
@@ -251,7 +251,7 @@ class TestOrderService(TestCase):
         expected_total = sum(
             float(item.price) * item.quantity for item in test_order.items
         )
-        self.assertAlmostEqual(order["total_price"], expected_total, places=2)
+        self.assertEqual(order["total_price"], expected_total)
         self.assertListEqual(
             [item["id"] for item in order["items"]],
             [item.id for item in test_order.items],
@@ -267,6 +267,71 @@ class TestOrderService(TestCase):
         with self.assertRaises(Exception):
             resp = self.client.get(f"{BASE_URL}/error")
             self.assertEqual(resp.status_code, status.HTTP_500_INTERNAL_SERVER_ERROR)
+
+    ######################################################################
+    #  O R D E R   Q U E R Y   T E S T   C A S E S
+    ######################################################################
+
+    def test_filter_orders_by_customer_id(self):
+        """It should filter orders by customer_id"""
+        o1 = OrderFactory(customer_id=123)
+        o2 = OrderFactory(customer_id=999)
+        self.client.post(BASE_URL, json=o1.serialize())
+        self.client.post(BASE_URL, json=o2.serialize())
+
+        resp = self.client.get(f"{BASE_URL}?customer_id=123")
+        self.assertEqual(resp.status_code, status.HTTP_200_OK)
+        data = resp.get_json()
+        self.assertTrue(all(order["customer_id"] == 123 for order in data))
+
+    def test_filter_orders_by_status(self):
+        """It should filter orders by status"""
+        o1 = OrderFactory(status="PENDING")
+        o2 = OrderFactory(status="SHIPPED")
+        self.client.post(BASE_URL, json=o1.serialize())
+        self.client.post(BASE_URL, json=o2.serialize())
+
+        resp = self.client.get(f"{BASE_URL}?status=PENDING")
+        self.assertEqual(resp.status_code, status.HTTP_200_OK)
+        data = resp.get_json()
+        self.assertTrue(all(order["status"] == "PENDING" for order in data))
+
+    def test_filter_orders_by_total_range(self):
+        """It should filter orders by total price range"""
+        o1 = OrderFactory(total_price=25.0)
+        o2 = OrderFactory(total_price=100.0)
+        o3 = OrderFactory(total_price=150.0)
+        o4 = OrderFactory(total_price=250.0)
+        for o in [o1, o2, o3, o4]:
+            self.client.post(BASE_URL, json=o.serialize())
+
+        resp = self.client.get(f"{BASE_URL}?min_total=50&max_total=200")
+        self.assertEqual(resp.status_code, status.HTTP_200_OK)
+        data = resp.get_json()
+        totals = [float(o["total_price"]) for o in data]
+        self.assertEqual(len(totals), 2)
+        self.assertIn(100.0, totals)
+        self.assertIn(150.0, totals)
+
+    def test_filter_orders_combined(self):
+        """It should support combined filters"""
+        o1 = OrderFactory(customer_id=123, status="PENDING")
+        o2 = OrderFactory(customer_id=123, status="SHIPPED")
+        o3 = OrderFactory(customer_id=999, status="PENDING")
+        for o in [o1, o2, o3]:
+            self.client.post(BASE_URL, json=o.serialize())
+
+        resp = self.client.get(f"{BASE_URL}?customer_id=123&status=PENDING")
+        self.assertEqual(resp.status_code, status.HTTP_200_OK)
+        data = resp.get_json()
+        for o in data:
+            self.assertEqual(o["customer_id"], 123)
+            self.assertEqual(o["status"], "PENDING")
+
+    def test_filter_orders_invalid_param(self):
+        """It should return 400 for invalid param"""
+        resp = self.client.get(f"{BASE_URL}?status=XXXXXX")
+        self.assertEqual(resp.status_code, status.HTTP_400_BAD_REQUEST)
 
     ######################################################################
     #  I T E M   T E S T   C A S E S
