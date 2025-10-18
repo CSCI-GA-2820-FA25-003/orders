@@ -362,7 +362,6 @@ class TestOrderService(TestCase):
         self.assertEqual(data["description"], item.description)
         self.assertEqual(data["product_id"], item.product_id)
         self.assertTrue(isinstance(data["price"], str))
-        # self.assertEqual(data["price"], "")
         self.assertEqual(Decimal(data["price"]), item.price)
         self.assertEqual(data["quantity"], item.quantity)
 
