@@ -104,6 +104,8 @@ class Order(db.Model, PersistentBase):
                         it.deserialize(payload)
                         built_items.append(it)
                     self.items = built_items
+                elif incoming and isinstance(incoming[0], int):
+                    self.items = incoming
                 else:
                     # not enough info to construct items, ignore
                     pass
