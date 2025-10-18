@@ -1,7 +1,8 @@
 """Test factories for creating test data."""
+
 import random
 from decimal import Decimal
-from factory import Factory, SubFactory, Sequence, Faker, post_generation, LazyFunction
+from factory import Factory, Sequence, Faker, post_generation, LazyFunction
 from service.models.order import Order, OrderStatus
 from service.models.item import Item
 
@@ -11,15 +12,13 @@ class OrderFactory(Factory):
 
     class Meta:  # pylint: disable=too-few-public-methods
         """Meta class"""
+
         model = Order
 
     id = Sequence(lambda n: n + 1)
     customer_id = Sequence(lambda n: n + 1)
     status = OrderStatus.PENDING
-    total_price = LazyFunction(lambda: float(round(random.uniform(10.0, 200.0), 2)))
 
-    # items should be a list (relationship), default empty list per-instance
-    # items = factory.LazyFunction(list)
     @post_generation
     def items(
         self, create, extracted, **kwargs
@@ -37,6 +36,7 @@ class ItemFactory(Factory):
 
     class Meta:  # pylint: disable=too-few-public-methods
         """Meta class"""
+
         model = Item
 
     id = Sequence(lambda n: n + 1)
@@ -44,7 +44,6 @@ class ItemFactory(Factory):
     category = Faker("word")
     product_id = LazyFunction(lambda: random.randint(1000, 9999))
     description = Faker("sentence")
-    price = LazyFunction(lambda: Decimal(0.0))
+    price = LazyFunction(lambda: Decimal(round(random.uniform(5.0, 100.0), 2)))
     quantity = LazyFunction(lambda: random.randint(1, 5))
     order_id = None
-    order = SubFactory(OrderFactory)

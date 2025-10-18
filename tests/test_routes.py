@@ -75,7 +75,7 @@ class TestOrderService(TestCase):
         orders = []
         for _ in range(count):
             order = OrderFactory()
-            resp = self.client.post(BASE_URL, json=order.serialize())
+            resp = self.client.post(BASE_URL, json=self.order_payload(order))
             self.assertEqual(
                 resp.status_code,
                 status.HTTP_201_CREATED,
@@ -99,7 +99,7 @@ class TestOrderService(TestCase):
         """It should Create a new Order"""
         test_order = OrderFactory()
         logging.debug("Test Order: %s", test_order.serialize())
-        response = self.client.post(BASE_URL, json=test_order.serialize())
+        response = self.client.post(BASE_URL, json=self.order_payload(test_order))
         self.assertEqual(response.status_code, status.HTTP_201_CREATED)
 
         # Make sure location header is set
@@ -150,7 +150,7 @@ class TestOrderService(TestCase):
         """It should not Create when sending wrong media type"""
         order = OrderFactory()
         resp = self.client.post(
-            BASE_URL, json=order.serialize(), content_type="test/html"
+            BASE_URL, json=self.order_payload(order), content_type="test/html"
         )
         self.assertEqual(resp.status_code, status.HTTP_415_UNSUPPORTED_MEDIA_TYPE)
 
@@ -168,7 +168,7 @@ class TestOrderService(TestCase):
         """It should Update an existing Order"""
         # create an Order to update
         test_order = OrderFactory()
-        resp = self.client.post(BASE_URL, json=test_order.serialize())
+        resp = self.client.post(BASE_URL, json=self.order_payload(test_order))
         self.assertEqual(resp.status_code, status.HTTP_201_CREATED)
 
         # update the order
@@ -236,7 +236,7 @@ class TestOrderService(TestCase):
         """It should Get an Order by ID"""
         # create an Order to get
         test_order = OrderFactory()
-        resp = self.client.post(BASE_URL, json=test_order.serialize())
+        resp = self.client.post(BASE_URL, json=self.order_payload(test_order))
         self.assertEqual(resp.status_code, status.HTTP_201_CREATED)
         new_order = resp.get_json()
         new_order_id = new_order["id"]
@@ -276,8 +276,8 @@ class TestOrderService(TestCase):
         """It should filter orders by customer_id"""
         o1 = OrderFactory(customer_id=123)
         o2 = OrderFactory(customer_id=999)
-        self.client.post(BASE_URL, json=o1.serialize())
-        self.client.post(BASE_URL, json=o2.serialize())
+        self.client.post(BASE_URL, json=self.order_payload(o1))
+        self.client.post(BASE_URL, json=self.order_payload(o2))
 
         resp = self.client.get(f"{BASE_URL}?customer_id=123")
         self.assertEqual(resp.status_code, status.HTTP_200_OK)
@@ -288,8 +288,8 @@ class TestOrderService(TestCase):
         """It should filter orders by status"""
         o1 = OrderFactory(status="PENDING")
         o2 = OrderFactory(status="SHIPPED")
-        self.client.post(BASE_URL, json=o1.serialize())
-        self.client.post(BASE_URL, json=o2.serialize())
+        self.client.post(BASE_URL, json=self.order_payload(o1))
+        self.client.post(BASE_URL, json=self.order_payload(o2))
 
         resp = self.client.get(f"{BASE_URL}?status=PENDING")
         self.assertEqual(resp.status_code, status.HTTP_200_OK)
@@ -303,7 +303,7 @@ class TestOrderService(TestCase):
         o3 = OrderFactory(total_price=150.0)
         o4 = OrderFactory(total_price=250.0)
         for o in [o1, o2, o3, o4]:
-            self.client.post(BASE_URL, json=o.serialize())
+            self.client.post(BASE_URL, json=self.order_payload(o))
 
         resp = self.client.get(f"{BASE_URL}?min_total=50&max_total=200")
         self.assertEqual(resp.status_code, status.HTTP_200_OK)
@@ -319,7 +319,7 @@ class TestOrderService(TestCase):
         o2 = OrderFactory(customer_id=123, status="SHIPPED")
         o3 = OrderFactory(customer_id=999, status="PENDING")
         for o in [o1, o2, o3]:
-            self.client.post(BASE_URL, json=o.serialize())
+            self.client.post(BASE_URL, json=self.order_payload(o))
 
         resp = self.client.get(f"{BASE_URL}?customer_id=123&status=PENDING")
         self.assertEqual(resp.status_code, status.HTTP_200_OK)
@@ -553,3 +553,19 @@ class TestOrderService(TestCase):
         # Attempt to list items for a non-existent order
         resp = self.client.get(f"{BASE_URL}/99999/items")
         self.assertEqual(resp.status_code, status.HTTP_404_NOT_FOUND)
+
+    def order_payload(self, order):
+        """Build API payload with full item dicts"""
+        items = []
+        for it in order.items:
+            d = it.serialize()
+            items.append(d)
+        payload = {
+            "id": order.id,
+            "customer_id": order.customer_id,
+            "status": order.status,
+            "items": items,
+        }
+        if not items:
+            payload["total_price"] = float(order.total_price or 0.0)
+        return payload

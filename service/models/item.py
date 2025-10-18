@@ -53,13 +53,15 @@ class Item(db.Model, PersistentBase):  # pylint: disable=too-many-instance-attri
             data (dict): A dictionary containing the resource data
         """
         try:
-            self.id = data["id"]
+            if "id" in data and data["id"] is not None:
+                self.id = data["id"]
             self.name = data["name"]
             self.category = data["category"]
             self.description = data["description"]
             self.price = data["price"]
             self.product_id = data["product_id"]
-            self.order_id = data["order_id"]
+            if "order_id" in data and data["order_id"] is not None:
+                self.order_id = data["order_id"]
             self.quantity = data.get("quantity", 1)
         except AttributeError as error:
             raise DataValidationError("Invalid attribute: " + error.args[0]) from error

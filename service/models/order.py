@@ -6,6 +6,8 @@ All of the models are stored in this module
 
 import logging
 from enum import Enum
+from typing import List
+from service.models.item import Item
 from .persistent_base import PersistentBase, DataValidationError, db
 
 logger = logging.getLogger("flask.app")
@@ -44,12 +46,22 @@ class Order(db.Model, PersistentBase):
 
     def create(self):
         """Creates an Order to the database."""
-        self.total_price = sum(float(item.price) * item.quantity for item in self.items)
+        if self.items:
+            self.total_price = sum(
+                float(item.price) * item.quantity for item in self.items
+            )
+        elif self.total_price is None:
+            self.total_price = 0.0
         super().create()
 
     def update(self):
         """Updates an Order in the database."""
-        self.total_price = sum(float(item.price) * item.quantity for item in self.items)
+        if self.items:
+            self.total_price = sum(
+                float(item.price) * item.quantity for item in self.items
+            )
+        elif self.total_price is None:
+            self.total_price = 0.0
         super().update()
 
     def serialize(self):
@@ -70,11 +82,28 @@ class Order(db.Model, PersistentBase):
             data (dict): A dictionary containing the resource data
         """
         try:
-            self.id = data["id"]
+            if "id" in data and data["id"] is not None:
+                self.id = data["id"]
+
             self.customer_id = data["customer_id"]
-            self.status = data["status"]
+
+            status_val = data.get("status", OrderStatus.PENDING)
+            self.status = status_val
+
             self.total_price = data["total_price"]
-            self.items = data["items"]
+
+            incoming = data.get("items")
+            if isinstance(incoming, list):
+                if incoming and isinstance(incoming[0], dict):
+                    built_items: List[Item] = []
+                    for payload in incoming:
+                        it = Item()
+                        it.deserialize(payload)
+                        built_items.append(it)
+                    self.items = built_items
+                else:
+                    # not enough info to construct items, ignore
+                    pass
         except AttributeError as error:
             raise DataValidationError("Invalid attribute: " + error.args[0]) from error
         except KeyError as error:
