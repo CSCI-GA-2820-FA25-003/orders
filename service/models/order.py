@@ -72,7 +72,7 @@ class Order(db.Model, PersistentBase):
             "customer_id": self.customer_id,
             "status": self.status,
             "total_price": str(self.total_price),
-            "items": [item.id for item in self.items],
+            "items": [item.serialize() for item in self.items],
         }
 
     def deserialize(self, data):
@@ -104,8 +104,6 @@ class Order(db.Model, PersistentBase):
                         it.deserialize(payload)
                         built_items.append(it)
                     self.items = built_items
-                elif incoming and isinstance(incoming[0], int):
-                    self.items = incoming
                 else:
                     # not enough info to construct items, ignore
                     pass
