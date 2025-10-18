@@ -22,6 +22,7 @@ Test cases for Pet Model
 import os
 import logging
 from unittest import TestCase
+from decimal import Decimal
 from wsgi import app
 from service.models.item import Item, DataValidationError, db
 from service.models.order import Order
@@ -148,7 +149,10 @@ class TestOrder(TestCase):
         self.assertEqual(serial_item["category"], item.category)
         self.assertEqual(serial_item["description"], item.description)
         self.assertEqual(serial_item["product_id"], item.product_id)
-        self.assertEqual(serial_item["price"], float(item.price))
+        self.assertEqual(
+            (Decimal(serial_item["price"]) if serial_item["price"] != "None" else None),
+            item.price,
+        )
         self.assertEqual(serial_item["order_id"], item.order_id)
         self.assertEqual(serial_item["quantity"], item.quantity)
 
@@ -168,7 +172,7 @@ class TestOrder(TestCase):
         self.assertEqual(new_item.category, item.category)
         self.assertEqual(new_item.description, item.description)
         self.assertEqual(new_item.product_id, item.product_id)
-        self.assertEqual(float(new_item.price), float(item.price))
+        self.assertEqual(new_item.price, item.price)
         self.assertEqual(new_item.order_id, item.order_id)
         self.assertEqual(new_item.quantity, item.quantity)
 
@@ -233,3 +237,33 @@ class TestOrder(TestCase):
         found = Item.find(i1.id)
         self.assertIsNotNone(found)
         self.assertEqual(found.id, i1.id)
+
+    def test_deserialize_item_price_type_error(self):
+        """It should not deserialize an Order with a price of wrong type"""
+        item = ItemFactory()
+        item_dict = item.serialize()
+        item_dict["price"] = 123
+        new_item = Item()
+        self.assertRaises(DataValidationError, new_item.deserialize, item_dict)
+
+        item_dict["price"] = "None"
+        new_item_2 = Item()
+        new_item_2.deserialize(item_dict)
+        self.assertEqual(new_item_2.price, None)
+
+    def test_find_by_name_returns_matching_items(self):
+        """It should return all items matching a given name"""
+        order = OrderFactory()
+        order.create()
+
+        # Create two items with same name and one with different name
+        i1 = ItemFactory(name="widget", order_id=order.id)
+        i2 = ItemFactory(name="widget", order_id=order.id)
+        i3 = ItemFactory(name="gadget", order_id=order.id)
+        i1.create()
+        i2.create()
+        i3.create()
+
+        results = Item.find_by_name("widget").all()
+        self.assertEqual(len(results), 2)
+        self.assertTrue(all(i.name == "widget" for i in results))

@@ -5,6 +5,7 @@ All of the models are stored in this module
 """
 
 import logging
+from decimal import Decimal
 from .persistent_base import PersistentBase, DataValidationError, db
 
 logger = logging.getLogger("flask.app")
@@ -40,7 +41,7 @@ class Item(db.Model, PersistentBase):  # pylint: disable=too-many-instance-attri
             "category": self.category,
             "description": self.description,
             "product_id": self.product_id,
-            "price": float(self.price),
+            "price": str(self.price),
             "order_id": self.order_id,
             "quantity": self.quantity,
         }
@@ -53,15 +54,19 @@ class Item(db.Model, PersistentBase):  # pylint: disable=too-many-instance-attri
             data (dict): A dictionary containing the resource data
         """
         try:
-            if "id" in data and data["id"] is not None:
-                self.id = data["id"]
+            self.id = data["id"]
             self.name = data["name"]
             self.category = data["category"]
             self.description = data["description"]
-            self.price = data["price"]
+            raw_price = data["price"]
+            if raw_price == "None":
+                self.price = None
+            elif isinstance(raw_price, str):
+                self.price = Decimal(raw_price)
+            else:
+                raise TypeError("Invalid price type")
             self.product_id = data["product_id"]
-            if "order_id" in data and data["order_id"] is not None:
-                self.order_id = data["order_id"]
+            self.order_id = data["order_id"]
             self.quantity = data.get("quantity", 1)
         except AttributeError as error:
             raise DataValidationError("Invalid attribute: " + error.args[0]) from error

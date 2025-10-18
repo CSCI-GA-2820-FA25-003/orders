@@ -44,6 +44,6 @@ class ItemFactory(Factory):
     category = Faker("word")
     product_id = LazyFunction(lambda: random.randint(1000, 9999))
     description = Faker("sentence")
-    price = LazyFunction(lambda: Decimal(round(random.uniform(5.0, 100.0), 2)))
+    price = LazyFunction(lambda: Decimal(str(round(random.uniform(5.0, 100.0), 2))))
     quantity = LazyFunction(lambda: random.randint(1, 5))
     order_id = None
