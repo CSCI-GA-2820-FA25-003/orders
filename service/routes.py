@@ -23,7 +23,7 @@ and Delete YourResourceModel
 
 from flask import jsonify, request, abort, url_for
 from flask import current_app as app  # Import Flask application
-from service.models.order import Order
+from service.models.order import Order, OrderStatus
 from service.models.item import Item
 from service.common import status  # HTTP Status Codes
 
@@ -48,7 +48,7 @@ def index():
         jsonify(
             name="Orders REST API Service",
             version="1.0",
-            paths=url_for("list_orders", _external=True)
+            paths=url_for("list_orders", _external=True),
         ),
         status.HTTP_200_OK,
     )
@@ -91,22 +91,56 @@ def create_orders():
 
 
 ######################################################################
-# LIST ALL ORDERS
+# LIST ALL ORDERS WITH OPTIONAL FILTERS
 ######################################################################
 @app.route("/orders", methods=["GET"])
 def list_orders():
-    """Returns all of the Orders"""
-    app.logger.info("Request for Order list")
-    orders = []
+    """
+    Lists all of the Orders with optional filtering by:
+      - customer_id (int)
+      - status (OrderStatus enum)
+      - min_total / max_total (float range)
+    """
+    app.logger.info("Request for Order list with filters: %s", request.args)
 
-    # Process the query string if any
-    name = request.args.get("name")
-    if name:
-        orders = Order.find_by_name(name)
-    else:
-        orders = Order.all()
+    query = Order.query
 
-    # Return as an array of dictionaries
+    allowed_params = {"customer_id", "status", "min_total", "max_total"}
+    unknown_params = set(request.args.keys()) - allowed_params
+    if unknown_params:
+        abort(
+            status.HTTP_400_BAD_REQUEST,
+            f"Invalid query parameters: {', '.join(unknown_params)}",
+        )
+
+    # customer_id
+    customer_id = request.args.get("customer_id", type=int)
+    if customer_id is not None:
+        query = query.filter(Order.customer_id == customer_id)
+
+    # status
+    status_param = request.args.get("status")
+    if status_param:
+        try:
+            valid_status = OrderStatus(status_param)
+            query = query.filter(Order.status == valid_status)
+        except ValueError:
+            abort(
+                status.HTTP_400_BAD_REQUEST,
+                f"Invalid status value: {status_param}. "
+                f"Must be one of {[s.value for s in OrderStatus]}",
+            )
+
+    # range
+    min_total = request.args.get("min_total", type=float)
+    max_total = request.args.get("max_total", type=float)
+    if min_total is not None:
+        query = query.filter(Order.total_price >= min_total)
+    if max_total is not None:
+        query = query.filter(Order.total_price <= max_total)
+
+    orders = query.all()
+
     results = [order.serialize() for order in orders]
 
     return jsonify(results), status.HTTP_200_OK
@@ -273,7 +307,7 @@ def get_items(order_id, item_id):
     if not item:
         abort(
             status.HTTP_404_NOT_FOUND,
-            f"Order with id '{item_id}' could not be found.",
+            f"Item with id '{item_id}' could not be found.",
         )
 
     return jsonify(item.serialize()), status.HTTP_200_OK

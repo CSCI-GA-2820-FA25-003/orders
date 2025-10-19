@@ -22,6 +22,7 @@ TestYourResourceModel API Service Test Suite
 import os
 import logging
 from unittest import TestCase
+from decimal import Decimal
 from wsgi import app
 from service.common import status
 from service.models.order import db, Order
@@ -111,10 +112,8 @@ class TestOrderService(TestCase):
         self.assertIn("id", new_order)
         self.assertEqual(new_order["customer_id"], test_order.customer_id)
         self.assertEqual(new_order["status"], test_order.status)
-        expected_total = sum(
-            float(item.price) * item.quantity for item in test_order.items
-        )
-        self.assertAlmostEqual(new_order["total_price"], expected_total, places=2)
+        expected_total = sum(item.price * item.quantity for item in test_order.items)
+        self.assertEqual(Decimal(new_order["total_price"]), expected_total)
         self.assertListEqual(
             [item["id"] for item in new_order["items"]],
             [item.id for item in test_order.items],
@@ -189,13 +188,13 @@ class TestOrderService(TestCase):
         self.assertEqual(updated_order_2["status"], "SHIPPED")
 
         new_order_3 = resp.get_json()
-        new_order_3["total_price"] = 0.0
+        new_order_3["total_price"] = str(Decimal(0.0))
         new_order_3["items"] = []
         new_order_id_3 = new_order_3["id"]
         resp = self.client.put(f"{BASE_URL}/{new_order_id_3}", json=new_order_3)
         self.assertEqual(resp.status_code, status.HTTP_200_OK)
         updated_order_3 = resp.get_json()
-        self.assertEqual(updated_order_3["total_price"], 0.0)
+        self.assertEqual(Decimal(updated_order_3["total_price"]), Decimal(0.0))
         self.assertListEqual(updated_order_3["items"], [])
 
     def test_update_order_not_found_returns_404(self):
@@ -203,7 +202,7 @@ class TestOrderService(TestCase):
         payload = {
             "customer_id": 1,
             "status": "PENDING",
-            "total_price": 0.0,
+            "total_price": str(Decimal(0.0)),
             "items": [],
         }
         resp = self.client.put(f"{BASE_URL}/999999", json=payload)
@@ -248,10 +247,8 @@ class TestOrderService(TestCase):
         self.assertEqual(order["id"], new_order_id)
         self.assertEqual(order["customer_id"], test_order.customer_id)
         self.assertEqual(order["status"], test_order.status)
-        expected_total = sum(
-            float(item.price) * item.quantity for item in test_order.items
-        )
-        self.assertAlmostEqual(order["total_price"], expected_total, places=2)
+        expected_total = sum(item.price * item.quantity for item in test_order.items)
+        self.assertEqual(Decimal(order["total_price"]), expected_total)
         self.assertListEqual(
             [item["id"] for item in order["items"]],
             [item.id for item in test_order.items],
@@ -267,6 +264,76 @@ class TestOrderService(TestCase):
         with self.assertRaises(Exception):
             resp = self.client.get(f"{BASE_URL}/error")
             self.assertEqual(resp.status_code, status.HTTP_500_INTERNAL_SERVER_ERROR)
+
+    ######################################################################
+    #  O R D E R   Q U E R Y   T E S T   C A S E S
+    ######################################################################
+
+    def test_filter_orders_by_customer_id(self):
+        """It should filter orders by customer_id"""
+        o1 = OrderFactory(customer_id=123)
+        o2 = OrderFactory(customer_id=999)
+        self.client.post(BASE_URL, json=o1.serialize())
+        self.client.post(BASE_URL, json=o2.serialize())
+
+        resp = self.client.get(f"{BASE_URL}?customer_id=123")
+        self.assertEqual(resp.status_code, status.HTTP_200_OK)
+        data = resp.get_json()
+        self.assertTrue(all(order["customer_id"] == 123 for order in data))
+
+    def test_filter_orders_by_status(self):
+        """It should filter orders by status"""
+        o1 = OrderFactory(status="PENDING")
+        o2 = OrderFactory(status="SHIPPED")
+        self.client.post(BASE_URL, json=o1.serialize())
+        self.client.post(BASE_URL, json=o2.serialize())
+
+        resp = self.client.get(f"{BASE_URL}?status=PENDING")
+        self.assertEqual(resp.status_code, status.HTTP_200_OK)
+        data = resp.get_json()
+        self.assertTrue(all(order["status"] == "PENDING" for order in data))
+
+    def test_filter_orders_by_total_range(self):
+        """It should filter orders by total price range"""
+        o1 = OrderFactory(total_price=Decimal(25.0))
+        o2 = OrderFactory(total_price=Decimal(100.0))
+        o3 = OrderFactory(total_price=Decimal(150.0))
+        o4 = OrderFactory(total_price=Decimal(250.0))
+        for o in [o1, o2, o3, o4]:
+            self.client.post(BASE_URL, json=o.serialize())
+
+        resp = self.client.get(f"{BASE_URL}?min_total=50&max_total=200")
+        self.assertEqual(resp.status_code, status.HTTP_200_OK)
+        data = resp.get_json()
+        totals = [Decimal(o["total_price"]) for o in data]
+        self.assertEqual(len(totals), 2)
+        self.assertIn(Decimal(100.0), totals)
+        self.assertIn(Decimal(150.0), totals)
+
+    def test_filter_orders_combined(self):
+        """It should support combined filters"""
+        o1 = OrderFactory(customer_id=123, status="PENDING")
+        o2 = OrderFactory(customer_id=123, status="SHIPPED")
+        o3 = OrderFactory(customer_id=999, status="PENDING")
+        for o in [o1, o2, o3]:
+            self.client.post(BASE_URL, json=o.serialize())
+
+        resp = self.client.get(f"{BASE_URL}?customer_id=123&status=PENDING")
+        self.assertEqual(resp.status_code, status.HTTP_200_OK)
+        data = resp.get_json()
+        for o in data:
+            self.assertEqual(o["customer_id"], 123)
+            self.assertEqual(o["status"], "PENDING")
+
+    def test_filter_orders_invalid_param(self):
+        """It should return 400 for invalid param"""
+        resp = self.client.get(f"{BASE_URL}?status=XXXXXX")
+        self.assertEqual(resp.status_code, status.HTTP_400_BAD_REQUEST)
+
+    def test_list_orders_rejects_unknown_query_params(self):
+        """It should return 400 when unknown query parameters are provided"""
+        resp = self.client.get(f"{BASE_URL}?foo=123&bar=456")
+        self.assertEqual(resp.status_code, status.HTTP_400_BAD_REQUEST)
 
     ######################################################################
     #  I T E M   T E S T   C A S E S
@@ -294,7 +361,8 @@ class TestOrderService(TestCase):
         self.assertEqual(data["category"], item.category)
         self.assertEqual(data["description"], item.description)
         self.assertEqual(data["product_id"], item.product_id)
-        self.assertEqual(data["price"], float(item.price))
+        self.assertTrue(isinstance(data["price"], str))
+        self.assertEqual(Decimal(data["price"]), item.price)
         self.assertEqual(data["quantity"], item.quantity)
 
         # Check that the location header was correct by getting it
@@ -346,7 +414,7 @@ class TestOrderService(TestCase):
         self.assertEqual(data["category"], item.category)
         self.assertEqual(data["description"], item.description)
         self.assertEqual(data["product_id"], item.product_id)
-        self.assertEqual(data["price"], float(item.price))
+        self.assertEqual(Decimal(data["price"]), item.price)
         self.assertEqual(data["quantity"], item.quantity)
 
     def test_get_item_not_found(self):

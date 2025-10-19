@@ -23,8 +23,10 @@ import os
 import logging
 from unittest.mock import patch
 from unittest import TestCase
+from decimal import Decimal
 from wsgi import app
 from service.models.order import Order, DataValidationError, db, OrderStatus
+from service.models.item import Item
 from .factories import OrderFactory
 
 DATABASE_URI = os.getenv(
@@ -141,7 +143,14 @@ class TestOrder(TestCase):
         self.assertEqual(order_dict["status"], order.status)
         self.assertEqual(order_dict["customer_id"], order.customer_id)
         self.assertEqual(order_dict["items"], order.items)
-        self.assertEqual(order_dict["total_price"], order.total_price)
+        self.assertEqual(
+            (
+                Decimal(order_dict["total_price"])
+                if order_dict["total_price"] != "None"
+                else None
+            ),
+            order.total_price,
+        )
 
     def test_deserialize_order(self):
         """It should deserialize an Order"""
@@ -155,6 +164,14 @@ class TestOrder(TestCase):
         self.assertEqual(new_order.items, order.items)
         self.assertEqual(new_order.total_price, order.total_price)
 
+    def test_deserialize_order_price_type_error(self):
+        """It should not deserialize an Order with a price of wrong type"""
+        order = OrderFactory()
+        order_dict = order.serialize()
+        order_dict["total_price"] = 123
+        new_order = Order()
+        self.assertRaises(DataValidationError, new_order.deserialize, order_dict)
+
     def test_deserialize_with_key_error(self):
         """It should not Deserialize an order with a KeyError"""
         order = Order()
@@ -164,3 +181,42 @@ class TestOrder(TestCase):
         """It should not Deserialize an order with a TypeError"""
         order = Order()
         self.assertRaises(DataValidationError, order.deserialize, [])
+
+    def test_deserialize_builds_items_list(self):
+        """It should build Item objects from incoming list of dicts (lines 103–108)"""
+        data = {
+            "id": 22,
+            "customer_id": 7,
+            "status": "PENDING",
+            "total_price": "10.00",
+            "items": [
+                {
+                    "id": 1,
+                    "name": "Book",
+                    "category": "Books",
+                    "description": "Novel",
+                    "product_id": 1111,
+                    "price": "5.00",
+                    "quantity": 2,
+                    "order_id": None,
+                },
+                {
+                    "id": 2,
+                    "name": "Pen",
+                    "category": "Stationery",
+                    "description": "Blue ink",
+                    "product_id": 2222,
+                    "price": "2.50",
+                    "quantity": 1,
+                    "order_id": None,
+                },
+            ],
+        }
+
+        order = Order()
+        order.deserialize(data)
+
+        self.assertEqual(len(order.items), 2)
+        self.assertEqual(order.items[0].name, "Book")
+        self.assertEqual(order.items[1].price, Decimal("2.50"))
+        self.assertIsInstance(order.items[0], Item)

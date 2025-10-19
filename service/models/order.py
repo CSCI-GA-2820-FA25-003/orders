@@ -6,6 +6,9 @@ All of the models are stored in this module
 
 import logging
 from enum import Enum
+from typing import List
+from decimal import Decimal
+from service.models.item import Item
 from .persistent_base import PersistentBase, DataValidationError, db
 
 logger = logging.getLogger("flask.app")
@@ -36,7 +39,7 @@ class Order(db.Model, PersistentBase):
         default=OrderStatus.PENDING,
         nullable=False,
     )
-    total_price = db.Column(db.Float, nullable=False)
+    total_price = db.Column(db.Numeric(14, 2), nullable=False)
     items = db.relationship("Item", backref="order", lazy=True, passive_deletes=True)
 
     def __repr__(self):
@@ -44,12 +47,22 @@ class Order(db.Model, PersistentBase):
 
     def create(self):
         """Creates an Order to the database."""
-        self.total_price = sum(float(item.price) * item.quantity for item in self.items)
+        if self.items:
+            self.total_price = sum(
+                Decimal(item.price) * Decimal(item.quantity) for item in self.items
+            )
+        elif self.total_price is None:
+            self.total_price = Decimal(0.0)
         super().create()
 
     def update(self):
         """Updates an Order in the database."""
-        self.total_price = sum(float(item.price) * item.quantity for item in self.items)
+        if self.items:
+            self.total_price = sum(
+                Decimal(item.price) * Decimal(item.quantity) for item in self.items
+            )
+        elif self.total_price is None:
+            self.total_price = Decimal(0.0)
         super().update()
 
     def serialize(self):
@@ -58,8 +71,8 @@ class Order(db.Model, PersistentBase):
             "id": self.id,
             "customer_id": self.customer_id,
             "status": self.status,
-            "total_price": self.total_price,
-            "items": [item.id for item in self.items],
+            "total_price": str(self.total_price),
+            "items": [item.serialize() for item in self.items],
         }
 
     def deserialize(self, data):
@@ -72,9 +85,28 @@ class Order(db.Model, PersistentBase):
         try:
             self.id = data["id"]
             self.customer_id = data["customer_id"]
-            self.status = data["status"]
-            self.total_price = data["total_price"]
-            self.items = data["items"]
+            self.status = data.get("status", OrderStatus.PENDING)
+
+            raw_price = data["total_price"]
+            if raw_price == "None":
+                self.total_price = None
+            elif isinstance(raw_price, str):
+                self.total_price = Decimal(raw_price)
+            else:
+                raise TypeError("Invalid price type")
+
+            incoming = data.get("items")
+            if isinstance(incoming, list):
+                if incoming and isinstance(incoming[0], dict):
+                    built_items: List[Item] = []
+                    for payload in incoming:
+                        it = Item()
+                        it.deserialize(payload)
+                        built_items.append(it)
+                    self.items = built_items
+                else:
+                    # not enough info to construct items, ignore
+                    pass
         except AttributeError as error:
             raise DataValidationError("Invalid attribute: " + error.args[0]) from error
         except KeyError as error:
