@@ -363,6 +363,38 @@ def update_items(order_id, item_id):
 
 
 ######################################################################
+# ACTIONS
+######################################################################
+
+
+@app.route("/orders/<int:order_id>/cancel", methods=["PUT"])
+def cancel_order(order_id: int):
+    """
+    Cancel an Order
+
+    This endpoint will cancel an Order based on the id specified in the path
+    """
+    order = Order.find(order_id)
+
+    if not order:
+        abort(
+            status.HTTP_404_NOT_FOUND,
+            f"Order with id '{order_id}' could not be found.",
+        )
+
+    if order.status in [OrderStatus.DELIVERED, OrderStatus.SHIPPED]:
+        abort(
+            status.HTTP_400_BAD_REQUEST,
+            "Orders that have already been shipped or delivered can’t be cancelled.",
+        )
+
+    order.status = OrderStatus.CANCELED
+    order.update()
+
+    return "", status.HTTP_200_OK
+
+
+######################################################################
 #  U T I L I T Y   F U N C T I O N S
 ######################################################################
 
