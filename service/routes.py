@@ -362,13 +362,18 @@ def update_items(order_id, item_id):
     return jsonify(item.serialize()), status.HTTP_200_OK
 
 
-
 ######################################################################
 # ACTIONS
 ######################################################################
 
-@app.route("/orders/<int:order_id>/cancel",methods=["PUT"])
+
+@app.route("/orders/<int:order_id>/cancel", methods=["PUT"])
 def cancel_order(order_id: int):
+    """
+    Cancel an Order
+
+    This endpoint will cancel an Order based on the id specified in the path
+    """
     order = Order.find(order_id)
 
     if not order:
@@ -376,17 +381,18 @@ def cancel_order(order_id: int):
             status.HTTP_404_NOT_FOUND,
             f"Order with id '{order_id}' could not be found.",
         )
-    
+
     if order.status in [OrderStatus.DELIVERED, OrderStatus.SHIPPED]:
         abort(
             status.HTTP_400_BAD_REQUEST,
-            f"Orders that have already been shipped or delivered can’t be cancelled.",
+            "Orders that have already been shipped or delivered can’t be cancelled.",
         )
 
     order.status = OrderStatus.CANCELED
     order.update()
 
-    return "",status.HTTP_200_OK
+    return "", status.HTTP_200_OK
+
 
 ######################################################################
 #  U T I L I T Y   F U N C T I O N S
@@ -413,5 +419,3 @@ def check_content_type(content_type) -> None:
         status.HTTP_415_UNSUPPORTED_MEDIA_TYPE,
         f"Content-Type must be {content_type}",
     )
-
-

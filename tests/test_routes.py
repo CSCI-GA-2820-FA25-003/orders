@@ -27,8 +27,7 @@ from decimal import Decimal
 import unittest
 from wsgi import app
 from service.common import status
-from service.models.order import db, Order,OrderStatus
-from service.models.item import Item
+from service.models.order import db, Order, OrderStatus
 from .factories import OrderFactory, ItemFactory
 
 DATABASE_URI = os.getenv(
@@ -561,6 +560,11 @@ class TestOrderService(TestCase):
 
 
 class TestOrderActions(unittest.TestCase):
+    """
+
+    Test the actions of the Order resource
+
+    """
     @classmethod
     def setUpClass(cls):
         """Run once before all tests"""
@@ -601,7 +605,7 @@ class TestOrderActions(unittest.TestCase):
         self.assertEqual(order.status, OrderStatus.CANCELED)
 
     def test_cancel_not_existent_order(self):
-        """ 
+        """
 
         It should return 404 when cancelling a non-existent order
 
@@ -624,6 +628,11 @@ class TestOrderActions(unittest.TestCase):
         self.assertEqual(res.status_code, status.HTTP_400_BAD_REQUEST)
 
     def test_server_error_on_cancel(self):
+        """
+
+        It should return 500 when cancelling an order fails
+
+        """
         order = OrderFactory()
         order.create()
         order.status = OrderStatus.PENDING
@@ -632,4 +641,3 @@ class TestOrderActions(unittest.TestCase):
             update.side_effect = Exception("Database commit failed")
             res = self.client.put(f"{BASE_URL}/{order.id}/cancel")
             self.assertEqual(res.status_code, status.HTTP_500_INTERNAL_SERVER_ERROR)
-        

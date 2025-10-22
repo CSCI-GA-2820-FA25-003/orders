@@ -1,4 +1,5 @@
 """This module defines the base class for persistent models in the service."""
+
 import logging
 from abc import abstractmethod
 from flask_sqlalchemy import SQLAlchemy
@@ -10,6 +11,7 @@ db = SQLAlchemy()
 
 class DataValidationError(Exception):
     """Base class for data validation errors when deserializing"""
+
 
 ######################################################################
 #  P E R S I S T E N T   B A S E   M O D E L

@@ -83,7 +83,7 @@ class Order(db.Model, PersistentBase):
             data (dict): A dictionary containing the resource data
         """
         try:
-            self.id = data.get("id",None)
+            self.id = data.get("id", None)
             self.customer_id = data["customer_id"]
             self.status = data.get("status", OrderStatus.PENDING)
             raw_price = data["total_price"]
