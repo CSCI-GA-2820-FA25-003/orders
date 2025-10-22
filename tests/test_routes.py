@@ -22,10 +22,13 @@ TestYourResourceModel API Service Test Suite
 import os
 import logging
 from unittest import TestCase
+from unittest.mock import patch
 from decimal import Decimal
+import unittest
 from wsgi import app
 from service.common import status
-from service.models.order import db, Order
+from service.models.order import db, Order,OrderStatus
+from service.models.item import Item
 from .factories import OrderFactory, ItemFactory
 
 DATABASE_URI = os.getenv(
@@ -301,7 +304,6 @@ class TestOrderService(TestCase):
         o4 = OrderFactory(total_price=Decimal(250.0))
         for o in [o1, o2, o3, o4]:
             self.client.post(BASE_URL, json=o.serialize())
-
         resp = self.client.get(f"{BASE_URL}?min_total=50&max_total=200")
         self.assertEqual(resp.status_code, status.HTTP_200_OK)
         data = resp.get_json()
@@ -556,3 +558,78 @@ class TestOrderService(TestCase):
         # Attempt to list items for a non-existent order
         resp = self.client.get(f"{BASE_URL}/99999/items")
         self.assertEqual(resp.status_code, status.HTTP_404_NOT_FOUND)
+
+
+class TestOrderActions(unittest.TestCase):
+    @classmethod
+    def setUpClass(cls):
+        """Run once before all tests"""
+        app.config["TESTING"] = True
+        app.config["DEBUG"] = False
+        app.config["PROPAGATE_EXCEPTIONS"] = False
+        # Set up the test database
+        app.config["SQLALCHEMY_DATABASE_URI"] = DATABASE_URI
+        app.logger.setLevel(logging.CRITICAL)
+        app.app_context().push()
+
+    @classmethod
+    def tearDownClass(cls):
+        """Run once after all tests"""
+        db.session.close()
+
+    def setUp(self):
+        """Runs before each test"""
+        self.client = app.test_client()
+        db.session.query(Order).delete()  # clean up the last tests
+        db.session.commit()
+
+    def tearDown(self):
+        """This runs after each test"""
+        db.session.remove()
+
+    def test_order_cancel_action(self):
+        """
+        It should return 200 when cancelling an order
+        """
+        order = OrderFactory()
+        order.create()
+
+        resp = self.client.put(f"{BASE_URL}/{order.id}/cancel")
+        self.assertEqual(resp.status_code, status.HTTP_200_OK)
+
+        order = Order.find(order.id)
+        self.assertEqual(order.status, OrderStatus.CANCELED)
+
+    def test_cancel_not_existent_order(self):
+        """ 
+
+        It should return 404 when cancelling a non-existent order
+
+        """
+        res = self.client.put(f"{BASE_URL}/999999/cancel")
+        self.assertEqual(res.status_code, status.HTTP_404_NOT_FOUND)
+
+    def test_cancel_shipped_or_delivered_order(self):
+        """
+
+        It should return 400 when cancelling a shipped or delivered order
+
+        """
+        order = OrderFactory()
+        order.create()
+        order.status = OrderStatus.SHIPPED
+        order.update()
+
+        res = self.client.put(f"{BASE_URL}/{order.id}/cancel")
+        self.assertEqual(res.status_code, status.HTTP_400_BAD_REQUEST)
+
+    def test_server_error_on_cancel(self):
+        order = OrderFactory()
+        order.create()
+        order.status = OrderStatus.PENDING
+        order.update()
+        with patch("service.models.order.Order.update") as update:
+            update.side_effect = Exception("Database commit failed")
+            res = self.client.put(f"{BASE_URL}/{order.id}/cancel")
+            self.assertEqual(res.status_code, status.HTTP_500_INTERNAL_SERVER_ERROR)
+        
