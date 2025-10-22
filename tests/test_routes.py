@@ -558,6 +558,324 @@ class TestOrderService(TestCase):
         resp = self.client.get(f"{BASE_URL}/99999/items")
         self.assertEqual(resp.status_code, status.HTTP_404_NOT_FOUND)
 
+    ######################################################################
+    #  I T E M   Q U E R Y   T E S T   C A S E S
+    ######################################################################
+
+    def test_list_items_no_filters(self):
+        """It should return all items when no filters are applied"""
+        # Create an order with multiple items
+        order = self._create_orders(1)[0]
+
+        items = []
+        for _ in range(3):
+            item = ItemFactory()
+            resp = self.client.post(
+                f"{BASE_URL}/{order.id}/items",
+                json=item.serialize(),
+                content_type="application/json",
+            )
+            self.assertEqual(resp.status_code, status.HTTP_201_CREATED)
+            items.append(resp.get_json())
+
+        # List all items without filters
+        resp = self.client.get(f"{BASE_URL}/{order.id}/items")
+        self.assertEqual(resp.status_code, status.HTTP_200_OK)
+
+        data = resp.get_json()
+        self.assertEqual(len(data), 3)
+
+    def test_filter_items_by_category_case_insensitive(self):
+        """It should filter items by category (case-insensitive)"""
+        order = self._create_orders(1)[0]
+
+        # Create items with different categories
+        item1 = ItemFactory(category="Books")
+        item2 = ItemFactory(category="Toys")
+        item3 = ItemFactory(category="Books")
+
+        for item in [item1, item2, item3]:
+            self.client.post(
+                f"{BASE_URL}/{order.id}/items",
+                json=item.serialize(),
+                content_type="application/json",
+            )
+
+        # Filter by category (lowercase)
+        resp = self.client.get(f"{BASE_URL}/{order.id}/items?category=books")
+        self.assertEqual(resp.status_code, status.HTTP_200_OK)
+        data = resp.get_json()
+
+        self.assertEqual(len(data), 2)
+        self.assertTrue(all(item["category"].lower() == "books" for item in data))
+
+    def test_filter_items_by_name_substring(self):
+        """It should filter items by name (substring match)"""
+        order = self._create_orders(1)[0]
+
+        # Create items with different names
+        item1 = ItemFactory(name="Blue Mug")
+        item2 = ItemFactory(name="Purple Mug")
+        item3 = ItemFactory(name="Red Plate")
+
+        for item in [item1, item2, item3]:
+            self.client.post(
+                f"{BASE_URL}/{order.id}/items",
+                json=item.serialize(),
+                content_type="application/json",
+            )
+
+        # Filter by name substring
+        resp = self.client.get(f"{BASE_URL}/{order.id}/items?name=mug")
+        self.assertEqual(resp.status_code, status.HTTP_200_OK)
+        data = resp.get_json()
+
+        self.assertEqual(len(data), 2)
+        self.assertTrue(all("mug" in item["name"].lower() for item in data))
+
+    def test_filter_items_by_description_substring(self):
+        """It should filter items by description (substring match)"""
+        order = self._create_orders(1)[0]
+
+        # Create items with different descriptions
+        item1 = ItemFactory(description="This is eco-friendly material")
+        item2 = ItemFactory(description="Very durable product")
+        item3 = ItemFactory(description="Made from eco-friendly sources")
+
+        for item in [item1, item2, item3]:
+            self.client.post(
+                f"{BASE_URL}/{order.id}/items",
+                json=item.serialize(),
+                content_type="application/json",
+            )
+
+        # Filter by description substring
+        resp = self.client.get(f"{BASE_URL}/{order.id}/items?description=eco")
+        self.assertEqual(resp.status_code, status.HTTP_200_OK)
+        data = resp.get_json()
+
+        self.assertEqual(len(data), 2)
+        self.assertTrue(all("eco" in item["description"].lower() for item in data))
+
+    def test_filter_items_by_product_id(self):
+        """It should filter items by product_id (exact match)"""
+        order = self._create_orders(1)[0]
+
+        # Create items with different product_ids
+        item1 = ItemFactory(product_id=123)
+        item2 = ItemFactory(product_id=456)
+        item3 = ItemFactory(product_id=123)
+
+        for item in [item1, item2, item3]:
+            self.client.post(
+                f"{BASE_URL}/{order.id}/items",
+                json=item.serialize(),
+                content_type="application/json",
+            )
+
+        # Filter by product_id
+        resp = self.client.get(f"{BASE_URL}/{order.id}/items?product_id=123")
+        self.assertEqual(resp.status_code, status.HTTP_200_OK)
+        data = resp.get_json()
+
+        self.assertEqual(len(data), 2)
+        self.assertTrue(all(item["product_id"] == 123 for item in data))
+
+    def test_filter_items_by_quantity(self):
+        """It should filter items by quantity (exact match)"""
+        order = self._create_orders(1)[0]
+
+        # Create items with different quantities
+        item1 = ItemFactory(quantity=1)
+        item2 = ItemFactory(quantity=2)
+        item3 = ItemFactory(quantity=5)
+
+        for item in [item1, item2, item3]:
+            self.client.post(
+                f"{BASE_URL}/{order.id}/items",
+                json=item.serialize(),
+                content_type="application/json",
+            )
+
+        # Filter by quantity
+        resp = self.client.get(f"{BASE_URL}/{order.id}/items?quantity=2")
+        self.assertEqual(resp.status_code, status.HTTP_200_OK)
+        data = resp.get_json()
+
+        self.assertEqual(len(data), 1)
+        self.assertEqual(data[0]["quantity"], 2)
+
+    def test_filter_items_by_price_range(self):
+        """It should filter items by price range (inclusive)"""
+        order = self._create_orders(1)[0]
+
+        # Create items with different prices
+        item1 = ItemFactory(price=Decimal("5.00"))
+        item2 = ItemFactory(price=Decimal("10.00"))
+        item3 = ItemFactory(price=Decimal("25.00"))
+
+        for item in [item1, item2, item3]:
+            self.client.post(
+                f"{BASE_URL}/{order.id}/items",
+                json=item.serialize(),
+                content_type="application/json",
+            )
+
+        # Filter by price range
+        resp = self.client.get(f"{BASE_URL}/{order.id}/items?min_price=6&max_price=20")
+        self.assertEqual(resp.status_code, status.HTTP_200_OK)
+        data = resp.get_json()
+
+        self.assertEqual(len(data), 1)
+        self.assertEqual(Decimal(data[0]["price"]), Decimal("10.00"))
+
+    def test_filter_items_by_min_price_only(self):
+        """It should filter items by only min_price"""
+        order = self._create_orders(1)[0]
+
+        # Create items with different prices
+        item1 = ItemFactory(price=Decimal("5.00"))
+        item2 = ItemFactory(price=Decimal("10.00"))
+        item3 = ItemFactory(price=Decimal("25.00"))
+
+        for item in [item1, item2, item3]:
+            self.client.post(
+                f"{BASE_URL}/{order.id}/items",
+                json=item.serialize(),
+                content_type="application/json",
+            )
+
+        # Filter by min_price only
+        resp = self.client.get(f"{BASE_URL}/{order.id}/items?min_price=10")
+        self.assertEqual(resp.status_code, status.HTTP_200_OK)
+        data = resp.get_json()
+
+        self.assertEqual(len(data), 2)
+        prices = [Decimal(item["price"]) for item in data]
+        self.assertTrue(all(price >= Decimal("10.00") for price in prices))
+
+    def test_filter_items_by_max_price_only(self):
+        """It should filter items by only max_price"""
+        order = self._create_orders(1)[0]
+
+        # Create items with different prices
+        item1 = ItemFactory(price=Decimal("5.00"))
+        item2 = ItemFactory(price=Decimal("10.00"))
+        item3 = ItemFactory(price=Decimal("25.00"))
+
+        for item in [item1, item2, item3]:
+            self.client.post(
+                f"{BASE_URL}/{order.id}/items",
+                json=item.serialize(),
+                content_type="application/json",
+            )
+
+        # Filter by max_price only
+        resp = self.client.get(f"{BASE_URL}/{order.id}/items?max_price=10")
+        self.assertEqual(resp.status_code, status.HTTP_200_OK)
+        data = resp.get_json()
+
+        self.assertEqual(len(data), 2)
+        prices = [Decimal(item["price"]) for item in data]
+        self.assertTrue(all(price <= Decimal("10.00") for price in prices))
+
+    def test_filter_items_combined_filters(self):
+        """It should support combining multiple filters"""
+        order = self._create_orders(1)[0]
+
+        # Create items with various attributes
+        item1 = ItemFactory(category="Books", product_id=123, price=Decimal("15.00"))
+        item2 = ItemFactory(category="Books", product_id=456, price=Decimal("15.00"))
+        item3 = ItemFactory(category="Toys", product_id=123, price=Decimal("15.00"))
+        item4 = ItemFactory(category="Books", product_id=123, price=Decimal("25.00"))
+
+        for item in [item1, item2, item3, item4]:
+            self.client.post(
+                f"{BASE_URL}/{order.id}/items",
+                json=item.serialize(),
+                content_type="application/json",
+            )
+
+        # Filter with multiple criteria
+        resp = self.client.get(
+            f"{BASE_URL}/{order.id}/items?category=books&product_id=123&min_price=10&max_price=20"
+        )
+        self.assertEqual(resp.status_code, status.HTTP_200_OK)
+        data = resp.get_json()
+
+        # Only item1 should match all criteria
+        self.assertEqual(len(data), 1)
+        self.assertEqual(data[0]["category"], "Books")
+        self.assertEqual(data[0]["product_id"], 123)
+        self.assertEqual(Decimal(data[0]["price"]), Decimal("15.00"))
+
+    def test_filter_items_invalid_min_price(self):
+        """It should return 400 when min_price is not a number"""
+        order = self._create_orders(1)[0]
+
+        resp = self.client.get(f"{BASE_URL}/{order.id}/items?min_price=abc")
+        self.assertEqual(resp.status_code, status.HTTP_400_BAD_REQUEST)
+
+    def test_filter_items_invalid_max_price(self):
+        """It should return 400 when max_price is not a number"""
+        order = self._create_orders(1)[0]
+
+        resp = self.client.get(f"{BASE_URL}/{order.id}/items?max_price=xyz")
+        self.assertEqual(resp.status_code, status.HTTP_400_BAD_REQUEST)
+
+    def test_filter_items_invalid_quantity(self):
+        """It should return 400 when quantity is not an integer"""
+        order = self._create_orders(1)[0]
+
+        resp = self.client.get(f"{BASE_URL}/{order.id}/items?quantity=two")
+        self.assertEqual(resp.status_code, status.HTTP_400_BAD_REQUEST)
+
+    def test_filter_items_invalid_product_id(self):
+        """It should return 400 when product_id is not an integer"""
+        order = self._create_orders(1)[0]
+
+        resp = self.client.get(f"{BASE_URL}/{order.id}/items?product_id=abc")
+        self.assertEqual(resp.status_code, status.HTTP_400_BAD_REQUEST)
+
+    def test_filter_items_unknown_parameter(self):
+        """It should return 400 when unknown query parameters are provided"""
+        order = self._create_orders(1)[0]
+
+        resp = self.client.get(f"{BASE_URL}/{order.id}/items?color=red")
+        self.assertEqual(resp.status_code, status.HTTP_400_BAD_REQUEST)
+
+    def test_filter_items_multiple_unknown_parameters(self):
+        """It should return 400 when multiple unknown query parameters are provided"""
+        order = self._create_orders(1)[0]
+
+        resp = self.client.get(f"{BASE_URL}/{order.id}/items?color=red&size=large")
+        self.assertEqual(resp.status_code, status.HTTP_400_BAD_REQUEST)
+
+    def test_filter_items_empty_result(self):
+        """It should return empty list when no items match the filter criteria"""
+        order = self._create_orders(1)[0]
+
+        # Create items
+        item1 = ItemFactory(category="Books")
+        self.client.post(
+            f"{BASE_URL}/{order.id}/items",
+            json=item1.serialize(),
+            content_type="application/json",
+        )
+
+        # Filter by non-existent category
+        resp = self.client.get(f"{BASE_URL}/{order.id}/items?category=nonexistent")
+        self.assertEqual(resp.status_code, status.HTTP_200_OK)
+        data = resp.get_json()
+
+        self.assertEqual(len(data), 0)
+        self.assertIsInstance(data, list)
+
+
+######################################################################
+#  A C T I O N   T E S T   C A S E S
+######################################################################
+
 
 class TestOrderActions(unittest.TestCase):
     """
@@ -565,6 +883,7 @@ class TestOrderActions(unittest.TestCase):
     Test the actions of the Order resource
 
     """
+
     @classmethod
     def setUpClass(cls):
         """Run once before all tests"""

@@ -222,6 +222,67 @@ def delete_orders(order_id):
 
 
 ######################################################################
+# HELPER FUNCTIONS FOR ITEM FILTERING
+######################################################################
+def _validate_and_get_int_param(param_name, param_value):
+    """Validate and return integer parameter value"""
+    try:
+        return int(param_value)
+    except ValueError:
+        abort(status.HTTP_400_BAD_REQUEST, f"{param_name} must be an integer")
+
+
+def _validate_and_get_float_param(param_name, param_value):
+    """Validate and return float parameter value"""
+    try:
+        return float(param_value)
+    except ValueError:
+        abort(status.HTTP_400_BAD_REQUEST, f"{param_name} must be a number")
+
+
+def _apply_string_filters(query, args):
+    """Apply string-based filters (category, name, description)"""
+    category = args.get("category")
+    if category:
+        query = query.filter(Item.category.ilike(category))
+
+    name = args.get("name")
+    if name:
+        query = query.filter(Item.name.ilike(f"%{name}%"))
+
+    description = args.get("description")
+    if description:
+        query = query.filter(Item.description.ilike(f"%{description}%"))
+
+    return query
+
+
+def _apply_numeric_filters(query, args):
+    """Apply numeric filters (product_id, quantity, price range)"""
+    product_id_str = args.get("product_id")
+    if product_id_str:
+        product_id = _validate_and_get_int_param("product_id", product_id_str)
+        query = query.filter(Item.product_id == product_id)
+
+    quantity_str = args.get("quantity")
+    if quantity_str:
+        quantity = _validate_and_get_int_param("quantity", quantity_str)
+        query = query.filter(Item.quantity == quantity)
+
+    min_price_str = args.get("min_price")
+    if min_price_str:
+        min_price = _validate_and_get_float_param("min_price", min_price_str)
+        query = query.filter(Item.price >= min_price)
+
+    max_price_str = args.get("max_price")
+    if max_price_str:
+        max_price = _validate_and_get_float_param("max_price", max_price_str)
+        query = query.filter(Item.price <= max_price)
+
+    return query
+
+
+######################################################################
 # CREATE AN ITEM
 ######################################################################
 @app.route("/orders/<int:order_id>/items", methods=["POST"])
@@ -262,16 +323,24 @@ def create_items(order_id):
 
 
 ######################################################################
-# LIST ALL ITEMS IN AN ORDER
+# LIST ALL ITEMS IN AN ORDER WITH OPTIONAL FILTERS
 ######################################################################
 @app.route("/orders/<int:order_id>/items", methods=["GET"])
 def list_items(order_id):
     """
-    List all Items in an Order
-
-    This endpoint returns all items associated with a specific order
+    List all Items in an Order with optional filtering by:
+      - category (string, case-insensitive exact match)
+      - name (string, substring match)
+      - description (string, substring match)
+      - product_id (int, exact match)
+      - min_price / max_price (float range, inclusive)
+      - quantity (int, exact match)
     """
-    app.logger.info("Request to list Items for Order id: %s", order_id)
+    app.logger.info(
+        "Request to list Items for Order id: %s with filters: %s",
+        order_id,
+        request.args,
+    )
 
     # See if the order exists and abort if it doesn't
     order = Order.find(order_id)
@@ -281,8 +350,32 @@ def list_items(order_id):
             f"Order with id '{order_id}' could not be found.",
         )
 
-    # Get all items for this order
-    items = Item.find_by_order_id(order_id)
+    # Define allowed query parameters
+    allowed_params = {
+        "category",
+        "name",
+        "description",
+        "product_id",
+        "min_price",
+        "max_price",
+        "quantity",
+    }
+    unknown_params = set(request.args.keys()) - allowed_params
+    if unknown_params:
+        abort(
+            status.HTTP_400_BAD_REQUEST,
+            f"Invalid query parameters: {', '.join(unknown_params)}",
+        )
+
+    # Start with base query for items in this order
+    query = Item.query.filter(Item.order_id == order_id)
+
+    # Apply filters
+    query = _apply_string_filters(query, request.args)
+    query = _apply_numeric_filters(query, request.args)
+
+    # Execute query
+    items = query.all()
 
     # Return as an array of dictionaries
     results = [item.serialize() for item in items]
