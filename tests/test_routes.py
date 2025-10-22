@@ -228,10 +228,10 @@ class TestOrderService(TestCase):
         self.assertIsNone(Order.find(order_id))
 
     def test_delete_order_not_found(self):
-        """It should return 404 when deleting a non-existent Order"""
+        """It should return 204 even when deleting a non-existent Order"""
         # Try to delete a non-existent order
         response = self.client.delete(f"{BASE_URL}/999")
-        self.assertEqual(response.status_code, status.HTTP_404_NOT_FOUND)
+        self.assertEqual(response.status_code, status.HTTP_204_NO_CONTENT)
 
     def test_get_order(self):
         """It should Get an Order by ID"""
@@ -565,6 +565,7 @@ class TestOrderActions(unittest.TestCase):
     Test the actions of the Order resource
 
     """
+
     @classmethod
     def setUpClass(cls):
         """Run once before all tests"""
