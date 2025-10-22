@@ -207,11 +207,9 @@ def delete_orders(order_id):
 
     # Retrieve the order to delete and delete it if it exists
     order = Order.find(order_id)
-    if not order:
-        abort(status.HTTP_404_NOT_FOUND, f"Order with id '{order_id}' was not found.")
-
-    order.delete()
-    app.logger.info("Order with id [%s] deleted!", order_id)
+    if order:
+        order.delete()
+        app.logger.info("Order with id [%s] deleted!", order_id)
 
     return "", status.HTTP_204_NO_CONTENT
 
