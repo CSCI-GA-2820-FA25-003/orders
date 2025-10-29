@@ -1,0 +1,53 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: orders-deployment
+  labels:
+    app: orders
+    version: v1
+spec:
+  replicas: 3
+  selector:
+    matchLabels:
+      app: orders
+  template:
+    metadata:
+      labels:
+        app: orders
+        version: v1
+    spec:
+      securityContext:
+        runAsUser: 1000
+        runAsGroup: 1000
+      initContainers:
+        - name: wait-for-postgres
+          image: postgres:15-alpine
+          imagePullPolicy: IfNotPresent
+          command:
+            - sh
+            - -c
+            - |
+              echo "Waiting for Postgres at postgres:5432 ..."
+              until pg_isready -h postgres -p 5432 -d promotions; do
+                echo "Postgres is not ready yet. Sleeping 2s..."
+                sleep 2
+              done
+              echo "Postgres is ready!"
+      containers:
+        - name: orders
+          image: cluster-registry:5000/orders:1.0
+          imagePullPolicy: IfNotPresent
+          ports:
+            - name: http
+              containerPort: 8080
+              protocol: TCP
+          env:
+          - name: FLASK_APP
+            value: "wsgi:app"
+          - name: FLASK_ENV
+            value: "production" 
+          - name: DATABASE_URI    
+            valueFrom:
+              secretKeyRef:
+                name: orders-db
+                key: DATABASE_URI

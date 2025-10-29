@@ -22,7 +22,7 @@ import sys
 from flask import Flask
 from service import config
 from service.common import log_handlers
-from service.models import order
+from service.models.order import Order
 
 
 ############################################################
