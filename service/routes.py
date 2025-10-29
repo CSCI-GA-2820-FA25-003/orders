@@ -486,6 +486,51 @@ def cancel_order(order_id: int):
 
 
 ######################################################################
+# REPEAT AN ORDER
+######################################################################
+@app.route("/orders/<int:order_id>/repeat", methods=["POST"])
+def repeat_order(order_id):
+    """
+    Repeat a previous Order
+
+    This endpoint allows customers to repeat a previous order.
+    It clones the existing order's items and creates a new order with status 'PENDING'.
+    """
+    app.logger.info("Request to repeat Order with id: %s", order_id)
+
+    order = Order.find(order_id)
+    if not order:
+        abort(
+            status.HTTP_404_NOT_FOUND, f"Order with id '{order_id}' could not be found."
+        )
+
+    if order.status == OrderStatus.CANCELED:
+        abort(status.HTTP_400_BAD_REQUEST, "Cannot repeat a cancelled order.")
+
+    new_order = Order()
+    new_order.customer_id = order.customer_id
+    new_order.status = OrderStatus.PENDING
+    new_order.create()
+
+    for item in order.items:
+        new_item = Item()
+        new_item.name = item.name
+        new_item.category = item.category
+        new_item.description = item.description
+        new_item.product_id = item.product_id
+        new_item.quantity = item.quantity
+        new_item.price = item.price
+        new_item.order_id = new_order.id
+        new_item.create()
+
+    response = {
+        "order_id": new_order.id,
+        "status": new_order.status.value,
+    }
+    return jsonify(response), status.HTTP_201_CREATED
+
+
+######################################################################
 #  U T I L I T Y   F U N C T I O N S
 ######################################################################
 

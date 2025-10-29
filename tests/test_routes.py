@@ -960,3 +960,36 @@ class TestOrderActions(unittest.TestCase):
             update.side_effect = Exception("Database commit failed")
             res = self.client.put(f"{BASE_URL}/{order.id}/cancel")
             self.assertEqual(res.status_code, status.HTTP_500_INTERNAL_SERVER_ERROR)
+
+    def test_repeat_order_success(self):
+        """It should repeat an existing order successfully"""
+        order = OrderFactory(status=OrderStatus.DELIVERED)
+        order.create()
+        item = ItemFactory(order=order)
+        item.create()
+
+        resp = self.client.post(f"{BASE_URL}/{order.id}/repeat")
+        self.assertEqual(resp.status_code, status.HTTP_201_CREATED)
+
+        data = resp.get_json()
+        self.assertIn("order_id", data)
+        self.assertEqual(data["status"], "PENDING")
+
+        new_order = Order.find(data["order_id"])
+        self.assertIsNotNone(new_order)
+        self.assertEqual(new_order.status, OrderStatus.PENDING)
+        self.assertNotEqual(new_order.id, order.id)
+        self.assertEqual(len(new_order.items), len(order.items))
+
+    def test_repeat_order_not_found(self):
+        """It should return 404 when trying to repeat a non-existent order"""
+        resp = self.client.post(f"{BASE_URL}/999999/repeat")
+        self.assertEqual(resp.status_code, status.HTTP_404_NOT_FOUND)
+
+    def test_repeat_cancelled_order(self):
+        """It should return 400 when trying to repeat a cancelled order"""
+        order = OrderFactory(status=OrderStatus.CANCELED)
+        order.create()
+
+        resp = self.client.post(f"{BASE_URL}/{order.id}/repeat")
+        self.assertEqual(resp.status_code, status.HTTP_400_BAD_REQUEST)
