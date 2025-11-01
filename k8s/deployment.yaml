@@ -22,7 +22,12 @@ spec:
       initContainers:
         - name: wait-for-postgres
           image: busybox:1.28
-          command: ['sh', '-c', 'until nc -z postgres 5432; do echo "Waiting for PostgreSQL..."; sleep 2; done;']
+          command:
+            [
+              "sh",
+              "-c",
+              'until nc -z postgres 5432; do echo "Waiting for PostgreSQL..."; sleep 2; done;',
+            ]
       containers:
         - name: orders
           image: cluster-registry:5000/orders:1.0
@@ -32,12 +37,12 @@ spec:
               containerPort: 8080
               protocol: TCP
           env:
-          - name: FLASK_APP
-            value: "wsgi:app"
-          - name: FLASK_ENV
-            value: "production" 
-          - name: DATABASE_URI    
-            valueFrom:
-              secretKeyRef:
-                name: orders-db
-                key: DATABASE_URI
+            - name: FLASK_APP
+              value: "wsgi:app"
+            - name: FLASK_ENV
+              value: "production"
+            - name: DATABASE_URI
+              valueFrom:
+                secretKeyRef:
+                  name: orders-db
+                  key: DATABASE_URI
