@@ -19,7 +19,7 @@ COPY wsgi.py ./
 ENV DATABASE_URI=sqlite:////tmp/orders.db
 
 # Expose application port
-EXPOSE 8080
+EXPOSE 8000
 
 # Start the Flask app with Gunicorn (wsgi:app)
-CMD ["gunicorn","--bind","0.0.0.0:8080","--log-level=info","wsgi:app"]
+CMD ["gunicorn","--bind","0.0.0.0:8000","--log-level=info","wsgi:app"]
