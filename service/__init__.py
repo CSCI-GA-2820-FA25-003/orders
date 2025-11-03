@@ -23,7 +23,7 @@ from flask import Flask
 from service import config
 from service.common import log_handlers
 from service.models.order import Order
-
+from flask_cors import CORS
 
 ############################################################
 # Initialize the Flask instance
@@ -33,7 +33,9 @@ def create_app():
     # Create Flask application
     app = Flask(__name__)
     app.config.from_object(config)
-
+    
+    # Enable CORS for all routes
+    CORS(app)
     # Initialize Plugins
     # pylint: disable=import-outside-toplevel
     from service.models.order import db
