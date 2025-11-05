@@ -19,11 +19,11 @@ This module creates and configures the Flask app and sets up the logging
 and SQL database
 """
 import sys
+from flask_cors import CORS
 from flask import Flask
 from service import config
 from service.common import log_handlers
 from service.models.order import Order
-from flask_cors import CORS
 
 
 ############################################################

@@ -11,6 +11,9 @@ RUN sudo python -m pip install --upgrade pip pipenv && \
 COPY .devcontainer/scripts/install-tools.sh /tmp/
 RUN cd /tmp && bash ./install-tools.sh
 
+RUN apt-get update && \
+    apt-get install -y --no-install-recommends ca-certificates chromium-driver firefox-esr python3-selenium
+
 # Copy application code
 COPY service /app/service
 COPY wsgi.py ./
