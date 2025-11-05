@@ -25,15 +25,16 @@ from service.common import log_handlers
 from service.models.order import Order
 from flask_cors import CORS
 
+
 ############################################################
 # Initialize the Flask instance
 ############################################################
 def create_app():
     """Initialize the core application."""
     # Create Flask application
-    app = Flask(__name__)
+    app = Flask(__name__, static_folder="static", static_url_path="/static")
     app.config.from_object(config)
-    
+
     # Enable CORS for all routes
     CORS(app)
     # Initialize Plugins
