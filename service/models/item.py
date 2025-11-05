@@ -54,7 +54,7 @@ class Item(db.Model, PersistentBase):  # pylint: disable=too-many-instance-attri
             data (dict): A dictionary containing the resource data
         """
         try:
-            self.id = data["id"]
+            self.id = data.get("id", None)
             self.name = data["name"]
             self.category = data["category"]
             self.description = data["description"]

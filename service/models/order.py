@@ -88,7 +88,7 @@ class Order(db.Model, PersistentBase):
             self.status = data.get("status", OrderStatus.PENDING)
             raw_price = data["total_price"]
             if raw_price == "None":
-                self.total_price = None
+                self.total_price = self.total_price
             elif isinstance(raw_price, str):
                 self.total_price = Decimal(raw_price)
             else:

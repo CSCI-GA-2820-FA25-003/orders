@@ -444,7 +444,6 @@ def update_items(order_id, item_id):
             status.HTTP_404_NOT_FOUND,
             f"Order with id '{item_id}' could not be found.",
         )
-
     # Update from the json in the body of the request
     item.deserialize(request.get_json())
     item.id = item_id
