@@ -46,6 +46,10 @@ run: ## Run the service
 	$(info Starting service...)
 	honcho start
 
+.PHONY: behave
+behave:
+	behave /app/service/features
+
 .PHONY: secret
 secret: ## Generate a secret hex key
 	$(info Generating a new secret key...)
