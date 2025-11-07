@@ -1,94 +1,209 @@
-## Order Listing & Filtering
+# Selenium Test Automation Guide
 
-To apply filters:
+This document provides a comprehensive guide to the test IDs and data attributes available for Selenium test automation.
 
-- Enter customer ID in input with data-testid="filter-customer-id-input"
-- Select status from dropdown with data-testid="filter-status-select"
-  - Click to open the dropdown:
-    ```python
-    # Using data-testid
-    driver.find_element(By.CSS_SELECTOR, '[data-testid="filter-status-select"]').click()
-    # Or using XPath
-    # driver.find_element(By.XPATH, '//*[@data-testid="filter-status-select"]').click()
-    ```
-  - Select one of: PENDING, SHIPPED, DELIVERED, CANCELED, or ALL
-    ```python
-    # Example to select 'PENDING'
-    driver.find_element(By.XPATH, '//*[@data-testid="filter-status-select"]//div[contains(text(), "PENDING")]').click()
-    # Or using CSS selector
-    # driver.find_element(By.CSS_SELECTOR, '[data-testid="filter-status-select"] div:contains("PENDING")').click()
-    ```
-- Enter min price in input with data-testid="filter-min-price-input"
-- Enter max price in input with data-testid="filter-max-price-input"
-- Click button with data-testid="apply-filters-button"
+## Test ID Naming Convention
 
-To clear filters:
+- `data-testid`: Used for general test identification
+- `data-id`: Used for simplified selectors and dynamic content
 
-- Click button with data-testid="clear-filters-button"
+## 1. Order Listing & Filtering
 
-## Order Actions
+### Filter Controls
 
-To search for an order:
+| Element           | Test ID                   | Data ID                | Type   | Description              |
+| ----------------- | ------------------------- | ---------------------- | ------ | ------------------------ |
+| Customer ID Input | `filter-customer-id`      | `filter-customer-id`   | Input  | Filter by customer ID    |
+| Status Dropdown   | `filter-status`           | -                      | Select | Filter by order status   |
+| Status Trigger    | `filter-status-trigger`   | -                      | Button | Opens status dropdown    |
+| Status Value      | `filter-status-value`     | -                      | Span   | Displays selected status |
+| Status Options    | `filter-status-all`       | `all`                  | Option | All statuses             |
+|                   | `filter-status-pending`   | `pending`              | Option | Pending status           |
+|                   | `filter-status-shipped`   | `shipped`              | Option | Shipped status           |
+|                   | `filter-status-delivered` | `delivered`            | Option | Delivered status         |
+|                   | `filter-status-canceled`  | `canceled`             | Option | Canceled status          |
+| Min Price Input   | `filter-min-price`        | `filter-min-price`     | Input  | Filter by minimum price  |
+| Max Price Input   | `filter-max-price`        | `filter-max-price`     | Input  | Filter by maximum price  |
+| Apply Filters     | `apply-filters`           | `apply-filters-button` | Button | Apply selected filters   |
+| Clear Filters     | `clear-filters`           | `clear-filters-button` | Button | Clear all filters        |
 
-- Enter order ID in input with data-testid="search-order-input"
-- Click button with data-testid="search-order-button"
+### Example: Filtering by Status
 
-To delete an order:
+```python
+# Open status dropdown
+driver.find_element(By.CSS_SELECTOR, '[data-testid="filter-status-trigger"]').click()
 
-- Click button with data-testid="delete-order-button" next to the order row
+# Select specific status (e.g., PENDING)
+driver.find_element(By.CSS_SELECTOR, '[data-id="pending"]').click()
 
-To list all orders:
+# Apply filters
+driver.find_element(By.CSS_SELECTOR, '[data-testid="apply-filters"]').click()
+```
 
-- Click button with data-testid="list-orders-button"
+### Example: Filtering by Price Range
 
-## Order Rows
+```python
+# Set minimum price
+driver.find_element(By.CSS_SELECTOR, '[data-testid="filter-min-price"]').send_keys("10.00")
 
-To manage items for an order:
+# Set maximum price
+driver.find_element(By.CSS_SELECTOR, '[data-testid="filter-max-price"]').send_keys("100.00")
 
-- Click button with data-testid="manage-items-button" next to the order row
+# Apply filters
+driver.find_element(By.CSS_SELECTOR, '[data-testid="apply-filters"]').click()
+```
 
-To cancel an order:
+## 2. Order Actions
 
-- Click button with data-testid="cancel-order-button" next to the order row
+### Search and List Controls
 
-To repeat an order:
+| Element         | Test ID               | Data ID               | Type   | Description           |
+| --------------- | --------------------- | --------------------- | ------ | --------------------- |
+| Search Input    | `search-order-input`  | `search-order-input`  | Input  | Search by order ID    |
+| Search Button   | `search-order-button` | `search-order-button` | Button | Execute search        |
+| List All Button | `list-orders-button`  | `list-orders-button`  | Button | List all orders       |
+| Delete Button   | `delete-order-{id}`   | `delete-order-{id}`   | Button | Delete specific order |
 
-- Click button with data-testid="repeat-order-button" next to the order row
+### Example: Searching for an Order
 
-## Order Creation/Update
+```python
+# Enter order ID
+driver.find_element(By.CSS_SELECTOR, '[data-testid="search-order-input"]').send_keys("123")
 
-To create or update an order:
+# Click search
+driver.find_element(By.CSS_SELECTOR, '[data-testid="search-order-button"]').click()
+```
 
-- Enter customer ID in input with data-testid="customer-id-input"
-- Click button with data-testid="create-order-button" (to create) or data-testid="update-order-button" (to update)
+### Example: Deleting an Order
 
-To clear form:
+```python
+# Delete order with ID 123
+driver.find_element(By.CSS_SELECTOR, '[data-testid="delete-order-123"]').click()
+```
 
-- Click button with data-testid="clear-form-button"
+## 3. Order Rows
 
-## Order Items
+### Order Actions
 
-To add an item:
+| Element      | Test ID             | Data ID             | Type   | Description           |
+| ------------ | ------------------- | ------------------- | ------ | --------------------- |
+| Manage Items | `manage-items-{id}` | `manage-items-{id}` | Button | Open items management |
+| Cancel Order | `cancel-order-{id}` | `cancel-order-{id}` | Button | Cancel specific order |
+| Repeat Order | `repeat-order-{id}` | `repeat-order-{id}` | Button | Duplicate order       |
+| Edit Order   | `edit-order-{id}`   | `edit-order-{id}`   | Button | Edit order details    |
 
-- Click button with data-testid="add-item-button"
-- Enter item name in input with data-testid="item-name-input"
-- Enter product ID in input with data-testid="item-product-id-input"
-- Select category from dropdown with data-testid="item-category-select":
-  - Click to open the dropdown:
-    ```python
-    # Using data-testid
-    driver.find_element(By.CSS_SELECTOR, '[data-testid="item-category-select"]').click()
-    # Or using XPath
-    # driver.find_element(By.XPATH, '//*[@data-testid="item-category-select"]').click()
-    ```
-  - Select from available categories (Electronics, Books, Clothing, etc.):
-    ```python
-    # Example to select 'Electronics'
-    driver.find_element(By.XPATH, '//*[@data-testid="item-category-select"]//div[contains(text(), "Electronics")]').click()
-    # Or using CSS selector
-    # driver.find_element(By.CSS_SELECTOR, '[data-testid="item-category-select"] div:contains("Electronics")').click()
-    ```
-- Enter price in input with data-testid="item-price-input"
-- Enter quantity in input with data-testid="item-quantity-input"
-- Enter description in input with data-testid="item-description-input"
-- Click button with data-testid="remove-item-button" to remove item
+### Example: Managing Order Items
+
+```python
+# Click manage items for order 123
+driver.find_element(By.CSS_SELECTOR, '[data-testid="manage-items-123"]').click()
+```
+
+## 4. Order Creation/Update
+
+### Form Controls
+
+| Element           | Test ID               | Data ID               | Type   | Description        |
+| ----------------- | --------------------- | --------------------- | ------ | ------------------ |
+| Customer ID Input | `customer-id-input`   | `customer-id-input`   | Input  | Customer ID field  |
+| Create Order      | `create-order-button` | `create-order-button` | Button | Submit new order   |
+| Update Order      | `update-order-button` | `update-order-button` | Button | Save order changes |
+| Clear Form        | `clear-form-button`   | `clear-form-button`   | Button | Reset form         |
+
+### Example: Creating a New Order
+
+```python
+# Enter customer ID
+driver.find_element(By.CSS_SELECTOR, '[data-testid="customer-id-input"]').send_keys("456")
+
+# Click create order
+driver.find_element(By.CSS_SELECTOR, '[data-testid="create-order-button"]').click()
+```
+
+## 5. Order Items Management
+
+### Item Form Controls
+
+| Element          | Test ID                         | Data ID                    | Type   | Description                   |
+| ---------------- | ------------------------------- | -------------------------- | ------ | ----------------------------- |
+| Add Item         | `add-item-button`               | `add-item-button`          | Button | Add new item row              |
+| Item Name        | `item-{index}-name`             | `item-{index}-name`        | Input  | Item name field               |
+| Product ID       | `item-{index}-product-id`       | `item-{index}-product-id`  | Input  | Product identifier            |
+| Category Select  | `item-{index}-category`         | -                          | Select | Item category                 |
+| Category Trigger | `item-{index}-category-trigger` | -                          | Button | Opens category dropdown       |
+| Category Value   | `item-{index}-category-value`   | -                          | Span   | Displays selected category    |
+| Category Options | `item-{index}-category-{name}`  | `{name}`                   | Option | Category options (kebab-case) |
+| Price            | `item-{index}-price`            | `item-{index}-price`       | Input  | Item price                    |
+| Quantity         | `item-{index}-quantity`         | `item-{index}-quantity`    | Input  | Item quantity                 |
+| Description      | `item-{index}-description`      | `item-{index}-description` | Input  | Item description              |
+| Remove Item      | `remove-item-{index}`           | `remove-item-{index}`      | Button | Remove item row               |
+| Save Item        | `save-item-{id}`                | `save-item-{id}`           | Button | Save item changes             |
+| Cancel Edit      | `cancel-edit-item`              | `cancel-edit-item`         | Button | Cancel item editing           |
+
+### Example: Adding a New Item
+
+```python
+# Click add item button
+driver.find_element(By.CSS_SELECTOR, '[data-testid="add-item-button"]').click()
+
+# Fill item details
+driver.find_element(By.CSS_SELECTOR, '[data-testid="item-0-name"]').send_keys("Laptop")
+driver.find_element(By.CSS_SELECTOR, '[data-testid="item-0-product-id"]').send_keys("LP123")
+
+# Select category
+driver.find_element(By.CSS_SELECTOR, '[data-testid="item-0-category-trigger"]').click()
+driver.find_element(By.CSS_SELECTOR, '[data-id="electronics"]').click()
+
+# Set price and quantity
+driver.find_element(By.CSS_SELECTOR, '[data-testid="item-0-price"]').send_keys("999.99")
+driver.find_element(By.CSS_SELECTOR, '[data-testid="item-0-quantity"]').clear()
+driver.find_element(By.CSS_SELECTOR, '[data-testid="item-0-quantity"]').send_keys("1")
+```
+
+## 6. Status Messages
+
+| Element        | Test ID          | Description                     |
+| -------------- | ---------------- | ------------------------------- |
+| Status Message | `status-message` | Displays success/error messages |
+
+## 7. Data Rows
+
+| Element   | Test ID          | Description                  |
+| --------- | ---------------- | ---------------------------- |
+| Order Row | `order-row-{id}` | Table row for specific order |
+| Item Row  | `item-row-{id}`  | Table row for specific item  |
+
+## Best Practices
+
+1. **Prefer `data-testid` over other selectors** for better test stability
+2. Use `data-id` for simplified selectors when the exact test ID is not needed
+3. For dynamic content (like order items), use the pattern `{prefix}-{index}-{field}`
+4. When testing dropdowns, always wait for the dropdown to be visible before interacting with it
+5. Use explicit waits when elements might take time to load
+
+## Example: Complete Test Case
+
+```python
+def test_create_order_with_items():
+    # Navigate to orders page
+    driver.get("https://your-app.com/orders")
+
+    # Click create new order
+    driver.find_element(By.CSS_SELECTOR, '[data-testid="create-order-button"]').click()
+
+    # Fill customer ID
+    driver.find_element(By.CSS_SELECTOR, '[data-testid="customer-id-input"]').send_keys("CUST123")
+
+    # Add first item
+    driver.find_element(By.CSS_SELECTOR, '[data-testid="add-item-button"]').click()
+    driver.find_element(By.CSS_SELECTOR, '[data-testid="item-0-name"]').send_keys("Laptop")
+    driver.find_element(By.CSS_SELECTOR, '[data-testid="item-0-product-id"]').send_keys("LP123")
+    driver.find_element(By.CSS_SELECTOR, '[data-testid="item-0-price"]').send_keys("999.99")
+
+    # Submit order
+    driver.find_element(By.CSS_SELECTOR, '[data-testid="create-order-button"]').click()
+
+    # Verify success message
+    status_message = driver.find_element(By.CSS_SELECTOR, '[data-testid="status-message"]').text
+    assert "Order created" in status_message
+```
