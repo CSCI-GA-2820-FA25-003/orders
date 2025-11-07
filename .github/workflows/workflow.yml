@@ -94,10 +94,9 @@ jobs:
           FLASK_APP: "service:create_app"
           FLASK_ENV: "testing"
           DATABASE_URI: "postgresql+psycopg://postgres:pgs3cr3t@postgres:5432/test_db"
-      ######################################################################
-      # Create a CODECOV_TOKEN in Settings->Secrets and variables->Actions
-      # and then uncomment the CodeCov action during hands-on lab
-      ######################################################################
+
+      - name: Installing chrome driver
+        run: apt-get install -y --no-install-recommends ca-certificates chromium-driver firefox-esr python3-selenium
 
       - name: Behave testing
         run: |
