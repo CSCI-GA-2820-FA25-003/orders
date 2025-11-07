@@ -11,6 +11,9 @@ RUN sudo python -m pip install --upgrade pip pipenv && \
 COPY .devcontainer/scripts/install-tools.sh /tmp/
 RUN cd /tmp && bash ./install-tools.sh
 
+RUN apt-get update && \
+    apt-get install -y --no-install-recommends ca-certificates chromium-driver firefox-esr python3-selenium
+
 # Copy application code
 COPY service /app/service
 COPY wsgi.py ./
@@ -19,7 +22,7 @@ COPY wsgi.py ./
 ENV DATABASE_URI=sqlite:////tmp/orders.db
 
 # Expose application port
-EXPOSE 8080
+EXPOSE 8000
 
 # Start the Flask app with Gunicorn (wsgi:app)
-CMD ["gunicorn","--bind","0.0.0.0:8080","--log-level=info","wsgi:app"]
+CMD ["gunicorn","--bind","0.0.0.0:8000","--log-level=info","wsgi:app"]

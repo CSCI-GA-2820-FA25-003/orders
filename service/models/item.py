@@ -17,7 +17,6 @@ class Item(db.Model, PersistentBase):  # pylint: disable=too-many-instance-attri
     """
 
     __tablename__ = "item"
-
     ##################################################
     # Table Schema
     ##################################################
@@ -54,7 +53,7 @@ class Item(db.Model, PersistentBase):  # pylint: disable=too-many-instance-attri
             data (dict): A dictionary containing the resource data
         """
         try:
-            self.id = data["id"]
+            self.id = data.get("id", None)
             self.name = data["name"]
             self.category = data["category"]
             self.description = data["description"]
@@ -64,7 +63,7 @@ class Item(db.Model, PersistentBase):  # pylint: disable=too-many-instance-attri
             elif isinstance(raw_price, str):
                 self.price = Decimal(raw_price)
             else:
-                raise TypeError("Invalid price type")
+                raise TypeError(f"Invalid price type: {type(raw_price)}")
             self.product_id = data["product_id"]
             self.order_id = data["order_id"]
             self.quantity = data.get("quantity", 1)

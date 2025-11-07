@@ -1,1 +1,2 @@
 FLASK_RUN_PORT=8080
+DRIVER=chrome
