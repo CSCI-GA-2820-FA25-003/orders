@@ -49,6 +49,7 @@ tar xvzf stern.tar.gz
 sudo install -c -m 0755 stern /usr/local/bin
 rm stern.tar.gz LICENSE
 
+
 echo "**********************************************************************"
 echo "Installing Knative CLI..."
 echo "**********************************************************************"
