@@ -11,11 +11,8 @@ retry2 = "~=0.9.5"
 python-dotenv = "~=1.0.1"
 gunicorn = "~=23.0.0"
 flask-cors = "*"
-<<<<<<< HEAD
-=======
 behave = "*"
 compare3 = "*"
->>>>>>> bdd_testing
 
 [dev-packages]
 black = "~=25.1.0"
