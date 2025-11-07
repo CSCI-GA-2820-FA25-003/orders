@@ -86,16 +86,19 @@ def step_impl(context):
         order_map[key].append(order["id"])
 
     # Add items to orders - distribute items across orders with same customer_id
+    # Track which order index we're using for sequential distribution
+    item_index = 0
+
     for row in context.table:
         # Try to match by customer_id if we have order_id_map from previous step
         order_id = None
-        if hasattr(context, "order_id_map"):
+        if hasattr(context, "order_id_map") and context.order_id_map:
             # Use order_id_map to find the right order
             # Items are added sequentially to orders
-            for idx, order_key in enumerate(sorted(context.order_id_map.keys())):
-                if idx < len(context.table):
-                    order_id = context.order_id_map[order_key]
-                    break
+            order_keys = sorted(context.order_id_map.keys())
+            if item_index < len(order_keys):
+                order_id = context.order_id_map[order_keys[item_index]]
+                item_index += 1
 
         # Fallback: use first available order
         if not order_id and orders:
@@ -110,6 +113,7 @@ def step_impl(context):
                 "description": row["description"],
                 "price": str(row["price"]),
                 "quantity": int(row["quantity"]),
+                "order_id": order_id,  # Required field for Item deserialize
             }
             context.resp = requests.post(
                 item_endpoint, json=payload, timeout=WAIT_TIMEOUT
