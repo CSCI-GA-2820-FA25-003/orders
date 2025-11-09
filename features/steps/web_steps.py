@@ -3,6 +3,7 @@ import time
 from typing import Any, Dict, List, Optional
 from behave.api.pending_step import StepNotImplementedError
 from behave import when, then, given  # pylint: disable=no-name-in-module
+from selenium.webdriver import ActionChains
 from selenium.webdriver.common.by import By
 from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions
