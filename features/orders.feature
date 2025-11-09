@@ -25,3 +25,16 @@ Feature: Order Management System
         Then I should see order with customer_id "1001" in the orders list
         And I should see order with customer_id "1002" in the orders list
         And I should see order with customer_id "1003" in the orders list
+    
+    Scenario: Create a new order with items
+        When I visit the "Orders Page"
+        Then I should see the "Create New Order" section
+        And I set the "Customer ID" to "3001"
+        And I set the "Item Name" to "New Product"
+        And I set the "Product ID" to "99999"
+        And I select "Electronics" in the "Category" dropdown
+        And I set the "Price" to "149.99"
+        And I set the "Quantity" to "2"
+        And I set the "Description" to "New item description"
+        And I press the "Create Order" button
+        Then the new order should appear in the orders list with customer_id "3001"
