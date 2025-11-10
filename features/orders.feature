@@ -38,3 +38,13 @@ Feature: Order Management System
         And I set the "Description" to "New item description"
         And I press the "Create Order" button
         Then the new order should appear in the orders list with customer_id "3001"
+
+    Scenario: Update order status to SHIPPED
+        When I visit the "Orders Page"
+        And I click the "List All Orders" button
+        And I find the order ID for customer_id "1001"
+        And I retrieve the order by its ID
+        Then the order should appear in the "Update Order" section
+        And I select "SHIPPED" in the "Status" dropdown
+        And I press the "Update Order" button
+        Then the order status should be updated to "SHIPPED"
