@@ -377,3 +377,330 @@ def step_impl(context, customer_id: str) -> None:
             f"Newly created order with customer_id {customer_id} not found in the orders list after 10 seconds. "
             f"Found customer_ids: {customer_ids_found}"
         )
+
+
+@then('I save the order ID for customer "{customer_id}"')
+def step_impl(context, customer_id: str) -> None:
+    """Save the order ID for the given customer_id to context for later use"""
+    # Find the order row with the matching customer_id and extract the order ID
+    order_rows = context.driver.find_elements(
+        By.CSS_SELECTOR, '[data-testid^="order-row-"]'
+    )
+
+    for row in order_rows:
+        cells = row.find_elements(By.TAG_NAME, "td")
+        if len(cells) >= 2:
+            # cells[0] = order_id, cells[1] = customer_id
+            if cells[1].text.strip() == str(customer_id).strip():
+                order_id = cells[0].text.strip()
+                context.saved_order_id = order_id
+                print(f"✓ Saved order ID: {order_id} for customer {customer_id}")
+                save_screenshot(context, f"saved-order-{order_id}")
+                return
+
+    save_screenshot(context, f"error-saving-order-id-customer-{customer_id}")
+    assert False, f"Could not find order with customer_id {customer_id} to save its ID"
+
+
+@when('I find the order ID for customer_id "{customer_id}"')
+def step_impl(context, customer_id: str) -> None:
+    """Find the order ID for a given customer_id from the orders list"""
+    print(f"\n=== FINDING ORDER ID FOR CUSTOMER_ID {customer_id} ===")
+
+    save_screenshot(context, "before-finding-order-id")
+
+    # Wait for the table to load
+    try:
+        WebDriverWait(context.driver, 5).until(
+            expected_conditions.presence_of_element_located(
+                (By.CSS_SELECTOR, '[data-testid^="order-row-"]')
+            )
+        )
+        print("✓ Orders table loaded")
+        save_screenshot(context, "orders-table-loaded")
+    except Exception as e:
+        print(f"❌ Error waiting for orders table: {e}")
+        save_screenshot(context, "error-loading-orders-table")
+        raise
+
+    # Find the order with the matching customer_id
+    order_id = None
+    try:
+        order_rows = context.driver.find_elements(
+            By.CSS_SELECTOR, '[data-testid^="order-row-"]'
+        )
+        print(f"  Found {len(order_rows)} orders in the table")
+
+        for row in order_rows:
+            cells = row.find_elements(By.TAG_NAME, "td")
+            if len(cells) >= 2:
+                row_customer_id = cells[1].text.strip()
+                row_order_id = cells[0].text.strip()
+                print(
+                    f"  Checking row: order_id={row_order_id}, customer_id={row_customer_id}"
+                )
+
+                if row_customer_id == str(customer_id).strip():
+                    order_id = row_order_id
+                    print(f"✓ Found order ID: {order_id} for customer {customer_id}")
+                    save_screenshot(context, f"found-order-{order_id}")
+                    break
+
+        if not order_id:
+            save_screenshot(context, f"error-order-not-found-customer-{customer_id}")
+            assert False, f"Could not find order with customer_id {customer_id}"
+
+        # Save the order ID for the next step
+        context.saved_order_id = order_id
+        print(f"✓ Saved order ID: {order_id} to context")
+    except Exception as e:
+        print(f"❌ Error finding order: {e}")
+        save_screenshot(context, "error-finding-order")
+        raise
+
+
+@when("I retrieve the order by its ID")
+def step_impl(context) -> None:
+    """Retrieve an order by searching for it using its ID"""
+    assert hasattr(context, "saved_order_id"), "No saved order ID found in context"
+
+    order_id = context.saved_order_id
+    print(f"\n=== RETRIEVING ORDER {order_id} ===")
+
+    save_screenshot(context, "before-retrieve-order")
+
+    # Enter the order ID in the search input
+    try:
+        search_input = WebDriverWait(context.driver, 5).until(
+            expected_conditions.presence_of_element_located(
+                (By.CSS_SELECTOR, '[data-testid="search-order-input"]')
+            )
+        )
+        print(f"✓ Found search input field")
+        save_screenshot(context, "found-search-input")
+
+        search_input.clear()
+        search_input.send_keys(order_id)
+        actual_value = search_input.get_attribute("value")
+        print(f"✓ Entered order ID {order_id} in search input")
+        print(f"  Actual value in field: {actual_value}")
+        save_screenshot(context, f"after-entering-search-order-{order_id}")
+    except Exception as e:
+        print(f"❌ Error finding/filling search input: {e}")
+        save_screenshot(context, "error-search-input")
+        raise
+
+    # Click the search button to retrieve the order
+    try:
+        search_button = WebDriverWait(context.driver, 5).until(
+            expected_conditions.element_to_be_clickable(
+                (By.CSS_SELECTOR, '[data-testid="search-order-button"]')
+            )
+        )
+        print(f"✓ Found search button")
+        save_screenshot(context, "before-clicking-search-button")
+
+        ActionChains(context.driver).move_to_element(search_button).click().perform()
+        print(f"✓ Clicked 'Search' button to retrieve order {order_id}")
+        time.sleep(0.5)
+        save_screenshot(context, f"after-retrieve-order-{order_id}")
+    except Exception as e:
+        print(f"❌ Error clicking search button: {e}")
+        save_screenshot(context, "error-clicking-search-button")
+        raise
+
+
+@then('the order should appear in the "Update Order" section')
+def step_impl(context) -> None:
+    """Verify that the order appears in the Update Order section"""
+    assert hasattr(context, "saved_order_id"), "No saved order ID found in context"
+
+    order_id = context.saved_order_id
+    print(f"\n=== VERIFYING ORDER {order_id} IN UPDATE SECTION ===")
+
+    save_screenshot(context, "before-checking-update-section")
+
+    # Wait a moment for the form to load
+    time.sleep(1)
+    save_screenshot(context, "after-waiting-for-form")
+
+    # Verify the Update Order button is visible (indicates form is in update mode)
+    try:
+        # Find button by text content since it doesn't have data-testid
+        update_button = WebDriverWait(context.driver, 10).until(
+            expected_conditions.presence_of_element_located(
+                (By.XPATH, "//button[contains(text(), 'Update Order')]")
+            )
+        )
+        print(f"✓ Found Update Order button - form is in update mode")
+        save_screenshot(context, "found-update-order-button")
+    except Exception as e:
+        print(f"❌ Error finding Update Order button: {e}")
+        save_screenshot(context, "error-finding-update-button")
+        raise
+
+    print(f"✓ Order {order_id} successfully loaded in Update Order section")
+    save_screenshot(context, f"order-{order_id}-in-update-section")
+
+
+@then('I select "{status}" in the "Status" dropdown')
+def step_impl(context, status: str) -> None:
+    """Select a status from the Status dropdown in the order form"""
+    print(f"\n=== SELECTING STATUS: {status} ===")
+
+    save_screenshot(context, "before-opening-status-dropdown")
+
+    # Click the status trigger to open the dropdown
+    try:
+        trigger = WebDriverWait(context.driver, 5).until(
+            expected_conditions.element_to_be_clickable(
+                (By.CSS_SELECTOR, '[data-testid="update-order-status-trigger"]')
+            )
+        )
+        print(f"✓ Found status dropdown trigger")
+        save_screenshot(context, "found-status-trigger")
+
+        ActionChains(context.driver).move_to_element(trigger).click().perform()
+        print(f"✓ Opened status dropdown")
+        time.sleep(0.3)
+        save_screenshot(context, "after-opening-status-dropdown")
+    except Exception as e:
+        print(f"❌ Error opening status dropdown: {e}")
+        save_screenshot(context, "error-opening-status-dropdown")
+        raise
+
+    # Wait for dropdown to be visible and click the option
+    # Status options use lowercase in data-id (e.g., "shipped")
+    try:
+        option = WebDriverWait(context.driver, 5).until(
+            expected_conditions.element_to_be_clickable(
+                (
+                    By.CSS_SELECTOR,
+                    f'[data-testid="update-order-status-{status.lower()}"]',
+                )
+            )
+        )
+        print(f"✓ Found status option: {status}")
+        save_screenshot(context, f"found-status-option-{status.lower()}")
+
+        ActionChains(context.driver).move_to_element(option).click().perform()
+        print(f"✓ Selected status: {status}")
+        time.sleep(0.3)
+        save_screenshot(context, f"after-selecting-status-{status.lower()}")
+    except Exception as e:
+        print(f"❌ Error selecting status {status}: {e}")
+        save_screenshot(context, f"error-selecting-status-{status.lower()}")
+        raise
+
+
+@then('I press the "Update Order" button')
+def step_impl(context) -> None:
+    """Click the Update Order button"""
+    print(f"\n=== CLICKING UPDATE ORDER BUTTON ===")
+
+    save_screenshot(context, "before-finding-update-button")
+
+    try:
+        # Find button by text content since it doesn't have data-testid
+        button = WebDriverWait(context.driver, 5).until(
+            expected_conditions.element_to_be_clickable(
+                (By.XPATH, "//button[contains(text(), 'Update Order')]")
+            )
+        )
+        print("✓ Found Update Order button")
+        save_screenshot(context, "found-update-button")
+
+        # Scroll to button to ensure it's visible
+        context.driver.execute_script("arguments[0].scrollIntoView(true);", button)
+        print("✓ Scrolled to Update Order button")
+        save_screenshot(context, "before-clicking-update-order")
+
+        ActionChains(context.driver).move_to_element(button).click().perform()
+        print("✓ Clicked 'Update Order' button")
+        time.sleep(0.5)
+        save_screenshot(context, "after-clicking-update-order")
+    except Exception as e:
+        print(f"❌ Error clicking Update Order button: {e}")
+        save_screenshot(context, "error-clicking-update-order")
+        raise
+
+
+@then('the order status should be updated to "{expected_status}"')
+def step_impl(context, expected_status: str) -> None:
+    """Verify that the order status has been updated"""
+    assert hasattr(context, "saved_order_id"), "No saved order ID found in context"
+
+    order_id = context.saved_order_id
+    print(f"\n=== VERIFYING STATUS UPDATE FOR ORDER {order_id} ===")
+
+    save_screenshot(context, "before-refresh-to-check-status")
+
+    # Click "List All Orders" to refresh the list
+    try:
+        list_button = WebDriverWait(context.driver, 5).until(
+            expected_conditions.element_to_be_clickable(
+                (By.CSS_SELECTOR, '[data-testid="list-orders-button"]')
+            )
+        )
+        print("✓ Found List All Orders button")
+        save_screenshot(context, "found-list-orders-button")
+
+        ActionChains(context.driver).move_to_element(list_button).click().perform()
+        print("✓ Clicked 'List All Orders' button to refresh")
+        time.sleep(0.5)
+        save_screenshot(context, "after-clicking-list-orders")
+    except Exception as e:
+        print(f"❌ Error clicking List All Orders: {e}")
+        save_screenshot(context, "error-clicking-list-orders")
+        raise
+
+    # Wait for the table to load
+    try:
+        WebDriverWait(context.driver, 5).until(
+            expected_conditions.presence_of_element_located(
+                (By.CSS_SELECTOR, '[data-testid^="order-row-"]')
+            )
+        )
+        print("✓ Orders table loaded")
+        save_screenshot(context, "after-refresh-for-status-check")
+    except Exception as e:
+        print(f"❌ Error waiting for orders table: {e}")
+        save_screenshot(context, "error-loading-orders-table")
+        raise
+
+    # Find the order row and check the status
+    try:
+        order_row = WebDriverWait(context.driver, 5).until(
+            expected_conditions.presence_of_element_located(
+                (By.CSS_SELECTOR, f'[data-testid="order-row-{order_id}"]')
+            )
+        )
+        print(f"✓ Found order row for order {order_id}")
+        save_screenshot(context, f"found-order-row-{order_id}")
+
+        cells = order_row.find_elements(By.TAG_NAME, "td")
+        print(f"  Order row has {len(cells)} columns")
+
+        # Print all cell values for debugging
+        for i, cell in enumerate(cells):
+            print(f"  Column {i}: {cell.text.strip()}")
+
+        # Assuming: cells[0] = order_id, cells[1] = customer_id, cells[2] = status
+        if len(cells) >= 3:
+            actual_status = cells[2].text.strip()
+            print(f"✓ Order {order_id} status: {actual_status}")
+            save_screenshot(context, f"order-{order_id}-status-{actual_status.lower()}")
+
+            assert (
+                actual_status.upper() == expected_status.upper()
+            ), f"Expected status '{expected_status}' but got '{actual_status}' for order {order_id}"
+            print(f"✓ Order status successfully updated to {expected_status}")
+        else:
+            save_screenshot(context, f"error-checking-status-order-{order_id}")
+            assert (
+                False
+            ), f"Could not find status column for order {order_id} (only {len(cells)} columns found)"
+    except Exception as e:
+        print(f"❌ Error checking order status: {e}")
+        save_screenshot(context, f"error-checking-status-order-{order_id}")
+        raise
