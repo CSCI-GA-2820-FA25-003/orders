@@ -704,3 +704,210 @@ def step_impl(context, expected_status: str) -> None:
         print(f"❌ Error checking order status: {e}")
         save_screenshot(context, f"error-checking-status-order-{order_id}")
         raise
+
+
+@when('I retrieve order with ID "{order_id}"')
+def step_impl(context, order_id: str) -> None:
+    """Retrieve a specific order by entering its ID and clicking search"""
+    print(f"\n=== RETRIEVING ORDER WITH ID {order_id} ===")
+
+    save_screenshot(context, "before-retrieve-by-id")
+
+    # Enter the order ID in the search input
+    try:
+        search_input = WebDriverWait(context.driver, 5).until(
+            expected_conditions.presence_of_element_located(
+                (By.CSS_SELECTOR, '[data-testid="search-order-input"]')
+            )
+        )
+        print(f"✓ Found search input field")
+        save_screenshot(context, "found-search-input-for-retrieve")
+
+        search_input.clear()
+        search_input.send_keys(order_id)
+        actual_value = search_input.get_attribute("value")
+        print(f"✓ Entered order ID {order_id} in search input")
+        print(f"  Actual value in field: {actual_value}")
+        save_screenshot(context, f"after-entering-order-id-{order_id}")
+    except Exception as e:
+        print(f"❌ Error finding/filling search input: {e}")
+        save_screenshot(context, "error-search-input-retrieve")
+        raise
+
+    # Click the search button to retrieve the order
+    try:
+        search_button = WebDriverWait(context.driver, 5).until(
+            expected_conditions.element_to_be_clickable(
+                (By.CSS_SELECTOR, '[data-testid="search-order-button"]')
+            )
+        )
+        print(f"✓ Found search button")
+        save_screenshot(context, "before-clicking-search-for-retrieve")
+
+        ActionChains(context.driver).move_to_element(search_button).click().perform()
+        print(f"✓ Clicked 'Search' button to retrieve order {order_id}")
+        time.sleep(0.5)
+        save_screenshot(context, f"after-retrieve-order-{order_id}")
+
+        # Save the order ID for later use
+        context.saved_order_id = order_id
+    except Exception as e:
+        print(f"❌ Error clicking search button: {e}")
+        save_screenshot(context, "error-clicking-search-for-retrieve")
+        raise
+
+
+@then("I should see only {count:d} order in the orders list")
+def step_impl(context, count: int) -> None:
+    """Verify that exactly the specified number of orders are displayed in the orders list"""
+    print(f"\n=== VERIFYING ORDER COUNT: {count} ===")
+
+    save_screenshot(context, "before-counting-orders")
+
+    # Wait for orders table to be present
+    try:
+        WebDriverWait(context.driver, 5).until(
+            expected_conditions.presence_of_element_located(
+                (By.CSS_SELECTOR, '[data-testid^="order-row-"]')
+            )
+        )
+        print("✓ Orders table loaded")
+        save_screenshot(context, "orders-table-loaded-for-count")
+    except Exception as e:
+        print(f"❌ Error waiting for orders table: {e}")
+        save_screenshot(context, "error-waiting-for-orders-table")
+        raise
+
+    # Count the orders in the table
+    order_rows = context.driver.find_elements(
+        By.CSS_SELECTOR, '[data-testid^="order-row-"]'
+    )
+    actual_count = len(order_rows)
+
+    print(f"  Expected: {count} order(s)")
+    print(f"  Actual: {actual_count} order(s)")
+
+    # Print details of each order for debugging
+    for i, row in enumerate(order_rows, 1):
+        cells = row.find_elements(By.TAG_NAME, "td")
+        if len(cells) >= 2:
+            order_id = cells[0].text.strip()
+            customer_id = cells[1].text.strip()
+            print(f"  Order {i}: ID={order_id}, Customer={customer_id}")
+
+    save_screenshot(context, f"order-count-{actual_count}")
+
+    assert (
+        actual_count == count
+    ), f"Expected {count} order(s) in the list, but found {actual_count}"
+    print(f"✓ Verified: exactly {count} order(s) in the list")
+
+
+@when('I find the retrieved order ID for customer_id "{customer_id}"')
+def step_impl_retrieve(context, customer_id: str) -> None:
+    """Find the order ID for a given customer_id from the orders list (for retrieve scenario)"""
+    print(f"\n=== FINDING ORDER ID FOR CUSTOMER_ID {customer_id} (RETRIEVE) ===")
+
+    save_screenshot(context, "before-finding-order-id-retrieve")
+
+    # Wait for the table to load
+    try:
+        WebDriverWait(context.driver, 5).until(
+            expected_conditions.presence_of_element_located(
+                (By.CSS_SELECTOR, '[data-testid^="order-row-"]')
+            )
+        )
+        print("✓ Orders table loaded")
+        save_screenshot(context, "orders-table-loaded-retrieve")
+    except Exception as e:
+        print(f"❌ Error waiting for orders table: {e}")
+        save_screenshot(context, "error-loading-orders-table-retrieve")
+        raise
+
+    # Find the order with the matching customer_id
+    order_id = None
+    try:
+        order_rows = context.driver.find_elements(
+            By.CSS_SELECTOR, '[data-testid^="order-row-"]'
+        )
+        print(f"  Found {len(order_rows)} orders in the table")
+
+        for row in order_rows:
+            cells = row.find_elements(By.TAG_NAME, "td")
+            if len(cells) >= 2:
+                row_customer_id = cells[1].text.strip()
+                row_order_id = cells[0].text.strip()
+                print(
+                    f"  Checking row: order_id={row_order_id}, customer_id={row_customer_id}"
+                )
+
+                if row_customer_id == str(customer_id).strip():
+                    order_id = row_order_id
+                    print(f"✓ Found order ID: {order_id} for customer {customer_id}")
+                    save_screenshot(context, f"found-order-{order_id}-retrieve")
+                    break
+
+        if not order_id:
+            save_screenshot(
+                context, f"error-order-not-found-customer-{customer_id}-retrieve"
+            )
+            assert False, f"Could not find order with customer_id {customer_id}"
+
+        # Save the order ID for the next step
+        context.saved_order_id = order_id
+        print(f"✓ Saved order ID: {order_id} to context")
+    except Exception as e:
+        print(f"❌ Error finding order: {e}")
+        save_screenshot(context, "error-finding-order-retrieve")
+        raise
+
+
+@when("I retrieve the order by its saved ID")
+def step_impl_retrieve_by_saved_id(context) -> None:
+    """Retrieve an order by searching for it using its saved ID"""
+    assert hasattr(context, "saved_order_id"), "No saved order ID found in context"
+
+    order_id = context.saved_order_id
+    print(f"\n=== RETRIEVING ORDER BY SAVED ID {order_id} ===")
+
+    save_screenshot(context, "before-retrieve-by-saved-id")
+
+    # Enter the order ID in the search input
+    try:
+        search_input = WebDriverWait(context.driver, 5).until(
+            expected_conditions.presence_of_element_located(
+                (By.CSS_SELECTOR, '[data-testid="search-order-input"]')
+            )
+        )
+        print(f"✓ Found search input field")
+        save_screenshot(context, "found-search-input-retrieve-saved")
+
+        search_input.clear()
+        search_input.send_keys(order_id)
+        actual_value = search_input.get_attribute("value")
+        print(f"✓ Entered order ID {order_id} in search input")
+        print(f"  Actual value in field: {actual_value}")
+        save_screenshot(context, f"after-entering-search-order-{order_id}-retrieve")
+    except Exception as e:
+        print(f"❌ Error finding/filling search input: {e}")
+        save_screenshot(context, "error-search-input-retrieve-saved")
+        raise
+
+    # Click the search button to retrieve the order
+    try:
+        search_button = WebDriverWait(context.driver, 5).until(
+            expected_conditions.element_to_be_clickable(
+                (By.CSS_SELECTOR, '[data-testid="search-order-button"]')
+            )
+        )
+        print(f"✓ Found search button")
+        save_screenshot(context, "before-clicking-search-button-retrieve")
+
+        ActionChains(context.driver).move_to_element(search_button).click().perform()
+        print(f"✓ Clicked 'Search' button to retrieve order {order_id}")
+        time.sleep(0.5)
+        save_screenshot(context, f"after-retrieve-order-{order_id}-saved")
+    except Exception as e:
+        print(f"❌ Error clicking search button: {e}")
+        save_screenshot(context, "error-clicking-search-button-retrieve")
+        raise
