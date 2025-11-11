@@ -48,3 +48,9 @@ Feature: Order Management System
         And I select "SHIPPED" in the "Status" dropdown
         And I press the "Update Order" button
         Then the order status should be updated to "SHIPPED"
+
+    Scenario: Delete an order by ID
+        When I visit the "Orders Page"
+        And I enter order ID "3" in the search field
+        And I click the "Delete" button
+        Then the order should be removed from the orders list
