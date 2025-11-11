@@ -911,3 +911,133 @@ def step_impl_retrieve_by_saved_id(context) -> None:
         print(f"❌ Error clicking search button: {e}")
         save_screenshot(context, "error-clicking-search-button-retrieve")
         raise
+
+
+@when('I enter order ID "{order_id}" in the search field')
+def step_impl_enter_order_id_for_delete(context, order_id: str) -> None:
+    """Enter order ID in the search field for deletion"""
+    print(f"\n=== ENTERING ORDER ID {order_id} FOR DELETE ===")
+
+    save_screenshot(context, "before-entering-order-id-for-delete")
+
+    # Enter the order ID in the search input
+    try:
+        search_input = WebDriverWait(context.driver, 5).until(
+            expected_conditions.presence_of_element_located(
+                (By.CSS_SELECTOR, '[data-testid="search-order-input"]')
+            )
+        )
+        print(f"✓ Found search input field")
+        save_screenshot(context, "found-search-input-for-delete")
+
+        search_input.clear()
+        search_input.send_keys(order_id)
+        actual_value = search_input.get_attribute("value")
+        print(f"✓ Entered order ID {order_id} in search input")
+        print(f"  Actual value in field: {actual_value}")
+        save_screenshot(context, f"after-entering-order-id-{order_id}-for-delete")
+
+        # Save the order ID for verification
+        context.order_id_to_delete = order_id
+    except Exception as e:
+        print(f"❌ Error finding/filling search input: {e}")
+        save_screenshot(context, "error-search-input-for-delete")
+        raise
+
+
+@when('I click the "Delete" button')
+def step_impl_click_delete_button(context) -> None:
+    """Click the Delete button"""
+    print(f"\n=== CLICKING DELETE BUTTON ===")
+
+    save_screenshot(context, "before-clicking-delete-button")
+
+    # Find and click the delete button
+    try:
+        delete_button = WebDriverWait(context.driver, 5).until(
+            expected_conditions.element_to_be_clickable(
+                (By.CSS_SELECTOR, '[data-testid="delete-order-button"]')
+            )
+        )
+        print(f"✓ Found Delete button")
+        save_screenshot(context, "found-delete-button")
+
+        ActionChains(context.driver).move_to_element(delete_button).click().perform()
+        print(f"✓ Clicked Delete button")
+        time.sleep(0.5)
+        save_screenshot(context, "after-clicking-delete-button")
+    except Exception as e:
+        print(f"❌ Error clicking Delete button: {e}")
+        save_screenshot(context, "error-clicking-delete-button")
+        raise
+
+
+@then("the order should be removed from the orders list")
+def step_impl_verify_order_removed(context) -> None:
+    """Verify that the order has been removed from the orders list"""
+    assert hasattr(
+        context, "order_id_to_delete"
+    ), "No order ID to delete found in context"
+
+    order_id = context.order_id_to_delete
+    print(f"\n=== VERIFYING ORDER {order_id} IS REMOVED ===")
+
+    save_screenshot(context, f"before-verifying-removal-order-{order_id}")
+
+    # Refresh the orders list to see the updated state
+    try:
+        list_button = WebDriverWait(context.driver, 5).until(
+            expected_conditions.element_to_be_clickable(
+                (By.CSS_SELECTOR, '[data-testid="list-orders-button"]')
+            )
+        )
+        print("✓ Found List All Orders button")
+        save_screenshot(context, "found-list-orders-button-for-verification")
+
+        ActionChains(context.driver).move_to_element(list_button).click().perform()
+        print("✓ Clicked 'List All Orders' button to refresh")
+        time.sleep(0.5)
+        save_screenshot(context, "after-clicking-list-orders-for-verification")
+    except Exception as e:
+        print(f"❌ Error clicking List All Orders: {e}")
+        save_screenshot(context, "error-clicking-list-orders-for-verification")
+        raise
+
+    # Wait for the table to load
+    try:
+        WebDriverWait(context.driver, 5).until(
+            expected_conditions.presence_of_element_located(
+                (By.CSS_SELECTOR, '[data-testid^="order-row-"]')
+            )
+        )
+        print("✓ Orders table loaded")
+        save_screenshot(context, "orders-table-loaded-after-delete")
+    except Exception as e:
+        # If no orders exist, that's also valid
+        print(f"  No orders found in table (might be empty): {e}")
+        save_screenshot(context, "no-orders-in-table-after-delete")
+
+    # Verify the order is NOT in the list
+    try:
+        order_rows = context.driver.find_elements(
+            By.CSS_SELECTOR, '[data-testid^="order-row-"]'
+        )
+        print(f"  Found {len(order_rows)} orders in the table after deletion")
+
+        # Check that the deleted order is not present
+        for row in order_rows:
+            cells = row.find_elements(By.TAG_NAME, "td")
+            if len(cells) >= 1:
+                row_order_id = cells[0].text.strip()
+                print(f"  Checking row: order_id={row_order_id}")
+
+                assert (
+                    row_order_id != order_id
+                ), f"Order {order_id} should have been deleted but is still present"
+
+        print(f"✓ Verified: Order {order_id} has been successfully removed")
+        save_screenshot(context, f"verified-order-{order_id}-removed")
+    except Exception as e:
+        print(f"❌ Error verifying order removal: {e}")
+        save_screenshot(context, f"error-verifying-removal-order-{order_id}")
+        raise
