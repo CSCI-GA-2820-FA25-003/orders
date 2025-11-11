@@ -54,3 +54,18 @@ Feature: Order Management System
         And I enter order ID "3" in the search field
         And I click the "Delete" button
         Then the order should be removed from the orders list
+
+    Scenario: Query orders with filters
+        When I navigate to the "Orders Page"
+        And I press the "List All Orders" button
+        Then I should see order with customer_id "1001" in the results
+        When I enter "1001" in the customer ID filter field
+        And I press the "Apply Filters" button
+        Then I should see order with customer_id "1001" in the filtered results
+        And I should not see order with customer_id "1002" in the filtered results
+        When I press the "Clear Filters" button
+        And I select "SHIPPED" in the status filter dropdown
+        And I press the "Apply Filters" button
+        Then I should see order with customer_id "1002" in the filtered results
+        And I should not see order with customer_id "1001" in the filtered results
+    

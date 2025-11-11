@@ -1041,3 +1041,289 @@ def step_impl_verify_order_removed(context) -> None:
         print(f"❌ Error verifying order removal: {e}")
         save_screenshot(context, f"error-verifying-removal-order-{order_id}")
         raise
+
+
+# ====================
+
+# Query filters
+
+
+# ====================
+@when('I navigate to the "Orders Page"')
+def step_impl_navigate_to_orders_page(context) -> None:
+    """Navigate to the Orders Page"""
+    context.driver.get(f"{context.base_url}/home")
+    print("✓ Navigated to Orders Page")
+
+
+@when('I press the "List All Orders" button')
+def step_impl_press_list_all_orders(context) -> None:
+    """Press the List All Orders button"""
+    button = WebDriverWait(context.driver, 5).until(
+        expected_conditions.element_to_be_clickable(
+            (By.CSS_SELECTOR, '[data-testid="list-orders-button"]')
+        )
+    )
+    button.click()
+    print("✓ Pressed List All Orders button")
+    time.sleep(0.5)
+    save_screenshot(context, "after-pressing-list-all-orders")
+
+
+@then('I should see order with customer_id "{customer_id}" in the results')
+def step_impl_should_see_order_in_results(context, customer_id: str) -> None:
+    """Verify that an order with the specified customer_id is visible in the results"""
+    print(f"\n=== VERIFYING ORDER WITH CUSTOMER_ID {customer_id} IN RESULTS ===")
+
+    # Wait for any order to appear first, so DOM is loaded
+    WebDriverWait(context.driver, 5).until(
+        expected_conditions.presence_of_element_located(
+            (By.CSS_SELECTOR, '[data-testid^="order-row-"]')
+        )
+    )
+
+    # Find all order rows
+    order_rows = context.driver.find_elements(
+        By.CSS_SELECTOR, '[data-testid^="order-row-"]'
+    )
+
+    # Look for a row where the customer_id column matches
+    found = False
+    for row in order_rows:
+        cells = row.find_elements(By.TAG_NAME, "td")
+        if len(cells) > 1:
+            if cells[1].text.strip() == str(customer_id).strip():
+                found = True
+                break
+
+    assert found, f"Order with customer_id {customer_id} not found in the results"
+    print(f"✓ Order with customer_id {customer_id} found in results")
+    save_screenshot(context, f"order-{customer_id}-in-results")
+
+
+@when('I enter "{value}" in the customer ID filter field')
+def step_impl_enter_customer_id_filter_field(context, value: str) -> None:
+    """Enter a value in the customer ID filter field"""
+    print(f"\n=== ENTERING CUSTOMER ID FILTER FIELD: {value} ===")
+
+    save_screenshot(context, "before-entering-customer-id-filter-field")
+
+    try:
+        filter_input = WebDriverWait(context.driver, 5).until(
+            expected_conditions.presence_of_element_located(
+                (By.CSS_SELECTOR, '[data-testid="filter-customer-id"]')
+            )
+        )
+        print(f"✓ Found customer ID filter field")
+        save_screenshot(context, "found-customer-id-filter-field")
+
+        filter_input.clear()
+        filter_input.send_keys(value)
+        actual_value = filter_input.get_attribute("value")
+        print(f"✓ Entered customer ID filter field: {value}")
+        print(f"  Actual value in field: {actual_value}")
+        save_screenshot(context, f"after-entering-customer-id-filter-field-{value}")
+    except Exception as e:
+        print(f"❌ Error entering customer ID filter field: {e}")
+        save_screenshot(context, "error-entering-customer-id-filter-field")
+        raise
+
+
+@when('I press the "Apply Filters" button')
+def step_impl_press_apply_filters_button(context) -> None:
+    """Press the Apply Filters button"""
+    print(f"\n=== PRESSING APPLY FILTERS BUTTON ===")
+
+    save_screenshot(context, "before-pressing-apply-filters")
+
+    try:
+        button = WebDriverWait(context.driver, 5).until(
+            expected_conditions.element_to_be_clickable(
+                (By.CSS_SELECTOR, '[data-testid="apply-filters"]')
+            )
+        )
+        print(f"✓ Found Apply Filters button")
+        save_screenshot(context, "found-apply-filters-button")
+
+        ActionChains(context.driver).move_to_element(button).click().perform()
+        print(f"✓ Pressed Apply Filters button")
+        time.sleep(0.5)
+        save_screenshot(context, "after-pressing-apply-filters")
+    except Exception as e:
+        print(f"❌ Error pressing Apply Filters button: {e}")
+        save_screenshot(context, "error-pressing-apply-filters")
+        raise
+
+
+@then('I should see order with customer_id "{customer_id}" in the filtered results')
+def step_impl_should_see_order_in_filtered_results(context, customer_id: str) -> None:
+    """Verify that an order with the specified customer_id is visible in the filtered results"""
+    print(
+        f"\n=== VERIFYING ORDER WITH CUSTOMER_ID {customer_id} IN FILTERED RESULTS ==="
+    )
+
+    save_screenshot(context, f"before-checking-filtered-results-{customer_id}")
+
+    # Wait for any order to appear first, so DOM is loaded
+    WebDriverWait(context.driver, 5).until(
+        expected_conditions.presence_of_element_located(
+            (By.CSS_SELECTOR, '[data-testid^="order-row-"]')
+        )
+    )
+
+    # Find all order rows
+    order_rows = context.driver.find_elements(
+        By.CSS_SELECTOR, '[data-testid^="order-row-"]'
+    )
+
+    print(f"  Found {len(order_rows)} orders in filtered results")
+
+    # Look for a row where the customer_id column matches
+    found = False
+    for row in order_rows:
+        cells = row.find_elements(By.TAG_NAME, "td")
+        if len(cells) > 1:
+            row_customer_id = cells[1].text.strip()
+            print(f"  Checking row: customer_id={row_customer_id}")
+            if row_customer_id == str(customer_id).strip():
+                found = True
+                break
+
+    save_screenshot(context, f"after-checking-filtered-results-{customer_id}")
+
+    assert (
+        found
+    ), f"Order with customer_id {customer_id} not found in the filtered results"
+    print(f"✓ Order with customer_id {customer_id} found in filtered results")
+
+
+@then('I should not see order with customer_id "{customer_id}" in the filtered results')
+def step_impl_should_not_see_order_in_filtered_results(
+    context, customer_id: str
+) -> None:
+    """Verify that an order with the specified customer_id is NOT visible in the filtered results"""
+    print(
+        f"\n=== VERIFYING ORDER WITH CUSTOMER_ID {customer_id} IS NOT IN FILTERED RESULTS ==="
+    )
+
+    save_screenshot(
+        context, f"before-checking-order-not-in-filtered-results-{customer_id}"
+    )
+
+    # Wait for any order to appear first, so DOM is loaded
+    try:
+        WebDriverWait(context.driver, 5).until(
+            expected_conditions.presence_of_element_located(
+                (By.CSS_SELECTOR, '[data-testid^="order-row-"]')
+            )
+        )
+        print("✓ Orders table loaded")
+    except Exception as e:
+        print(f"  No orders found in table: {e}")
+        save_screenshot(context, "no-orders-in-filtered-results")
+        # If no orders exist, the assertion passes
+        return
+
+    # Find all order rows
+    order_rows = context.driver.find_elements(
+        By.CSS_SELECTOR, '[data-testid^="order-row-"]'
+    )
+
+    print(f"  Found {len(order_rows)} orders in filtered results")
+
+    # Look for a row where the customer_id column matches
+    found = False
+    for row in order_rows:
+        cells = row.find_elements(By.TAG_NAME, "td")
+        if len(cells) > 1:
+            row_customer_id = cells[1].text.strip()
+            print(f"  Checking row: customer_id={row_customer_id}")
+            if row_customer_id == str(customer_id).strip():
+                found = True
+                break
+
+    save_screenshot(
+        context, f"after-checking-order-not-in-filtered-results-{customer_id}"
+    )
+
+    assert (
+        not found
+    ), f"Order with customer_id {customer_id} should NOT be in the filtered results, but it was found"
+    print(
+        f"✓ Verified: Order with customer_id {customer_id} is not in filtered results"
+    )
+
+
+@when('I press the "Clear Filters" button')
+def step_impl_press_clear_filters_button(context) -> None:
+    """Press the Clear Filters button"""
+    print(f"\n=== PRESSING CLEAR FILTERS BUTTON ===")
+
+    save_screenshot(context, "before-pressing-clear-filters")
+
+    try:
+        button = WebDriverWait(context.driver, 5).until(
+            expected_conditions.element_to_be_clickable(
+                (By.CSS_SELECTOR, '[data-testid="clear-filters"]')
+            )
+        )
+        print(f"✓ Found Clear Filters button")
+        save_screenshot(context, "found-clear-filters-button")
+
+        ActionChains(context.driver).move_to_element(button).click().perform()
+        print(f"✓ Pressed Clear Filters button")
+        time.sleep(0.3)
+        save_screenshot(context, "after-pressing-clear-filters")
+    except Exception as e:
+        print(f"❌ Error pressing Clear Filters button: {e}")
+        save_screenshot(context, "error-pressing-clear-filters")
+        raise
+
+
+@when('I select "{status}" in the status filter dropdown')
+def step_impl_select_status_in_filter_dropdown(context, status: str) -> None:
+    """Select a status from the status filter dropdown"""
+    print(f"\n=== SELECTING STATUS IN FILTER DROPDOWN: {status} ===")
+
+    save_screenshot(context, "before-opening-status-filter-dropdown")
+
+    # Click the status filter trigger to open the dropdown
+    try:
+        trigger = WebDriverWait(context.driver, 5).until(
+            expected_conditions.element_to_be_clickable(
+                (By.CSS_SELECTOR, '[data-testid="filter-status-trigger"]')
+            )
+        )
+        print(f"✓ Found status filter dropdown trigger")
+        save_screenshot(context, "found-status-filter-dropdown-trigger")
+
+        ActionChains(context.driver).move_to_element(trigger).click().perform()
+        print(f"✓ Opened status filter dropdown")
+        time.sleep(0.3)
+        save_screenshot(context, "after-opening-status-filter-dropdown")
+    except Exception as e:
+        print(f"❌ Error opening status filter dropdown: {e}")
+        save_screenshot(context, "error-opening-status-filter-dropdown")
+        raise
+
+    # Wait for dropdown to be visible and click the option
+    try:
+        option = WebDriverWait(context.driver, 5).until(
+            expected_conditions.element_to_be_clickable(
+                (
+                    By.CSS_SELECTOR,
+                    f'[data-testid="filter-status-{status.lower()}"]',
+                )
+            )
+        )
+        print(f"✓ Found status filter option: {status}")
+        save_screenshot(context, f"found-status-filter-option-{status.lower()}")
+
+        ActionChains(context.driver).move_to_element(option).click().perform()
+        print(f"✓ Selected status in filter dropdown: {status}")
+        time.sleep(0.3)
+        save_screenshot(context, f"after-selecting-status-filter-{status.lower()}")
+    except Exception as e:
+        print(f"❌ Error selecting status in filter dropdown {status}: {e}")
+        save_screenshot(context, f"error-selecting-status-filter-{status.lower()}")
+        raise
