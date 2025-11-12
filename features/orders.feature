@@ -78,4 +78,11 @@ Feature: Order Management System
         Then a duplicate order should be created with the same customer_id "1001"
         And the duplicated order should contain all original items
 
-   
+    Scenario: Terminate an active order
+        When I navigate to the "Orders Page"
+        And I press the "List All Orders" button
+        Then I should see order with customer_id "1001" in the results
+        When I locate the order ID for customer "1001"
+        And I trigger the cancel action for that order
+        Then the order should have status "CANCELED"
+

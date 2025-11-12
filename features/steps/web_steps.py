@@ -1574,3 +1574,127 @@ def step_impl_verify_duplicate_has_items(context) -> None:
             context, f"error-verifying-duplicate-items-{duplicate_order_id}"
         )
         raise
+
+# ====================
+# Cancel Order Scenario
+# ====================
+
+
+@when("I trigger the cancel action for that order")
+def step_impl_trigger_cancel_action(context) -> None:
+    """Trigger the cancel action for the located order"""
+    assert hasattr(
+        context, "located_order_id"
+    ), "No located order ID found in context"
+
+    order_id = context.located_order_id
+    print(f"\n=== TRIGGERING CANCEL ACTION FOR ORDER {order_id} ===")
+
+    save_screenshot(context, f"before-cancel-order-{order_id}")
+
+    # Find and click the cancel button for this order
+    try:
+        cancel_button = WebDriverWait(context.driver, 5).until(
+            expected_conditions.element_to_be_clickable(
+                (By.CSS_SELECTOR, f'[data-testid="cancel-order-{order_id}"]')
+            )
+        )
+        print(f"✓ Found Cancel button for order {order_id}")
+        save_screenshot(context, f"found-cancel-button-{order_id}")
+
+        # Scroll to button to ensure it's visible
+        context.driver.execute_script(
+            "arguments[0].scrollIntoView(true);", cancel_button
+        )
+        ActionChains(context.driver).move_to_element(cancel_button).click().perform()
+        print(f"✓ Clicked Cancel button for order {order_id}")
+        time.sleep(1)
+        save_screenshot(context, f"after-cancel-order-{order_id}")
+    except Exception as e:
+        print(f"❌ Error clicking Cancel button: {e}")
+        save_screenshot(context, f"error-clicking-cancel-button-{order_id}")
+        raise
+
+
+@then('the order should have status "{expected_status}"')
+def step_impl_verify_order_status(context, expected_status: str) -> None:
+    """Verify that the order has the expected status"""
+    assert hasattr(
+        context, "located_order_id"
+    ), "No located order ID found in context"
+
+    order_id = context.located_order_id
+    print(f"\n=== VERIFYING STATUS FOR ORDER {order_id} ===")
+
+    save_screenshot(context, f"before-verifying-status-{order_id}")
+
+    # Wait for the status update
+    time.sleep(1)
+
+    # Refresh the orders list to see the updated status
+    try:
+        list_button = WebDriverWait(context.driver, 5).until(
+            expected_conditions.element_to_be_clickable(
+                (By.CSS_SELECTOR, '[data-testid="list-orders-button"]')
+            )
+        )
+        print("✓ Found List All Orders button")
+        ActionChains(context.driver).move_to_element(list_button).click().perform()
+        print("✓ Clicked List All Orders button to refresh")
+        time.sleep(0.5)
+        save_screenshot(context, "after-refresh-for-status-check")
+    except Exception as e:
+        print(f"❌ Error refreshing orders list: {e}")
+        save_screenshot(context, "error-refreshing-for-status")
+        raise
+
+    # Wait for the table to load
+    try:
+        WebDriverWait(context.driver, 5).until(
+            expected_conditions.presence_of_element_located(
+                (By.CSS_SELECTOR, '[data-testid^="order-row-"]')
+            )
+        )
+        print("✓ Orders table loaded")
+        save_screenshot(context, "orders-table-loaded-for-status-check")
+    except Exception as e:
+        print(f"❌ Error waiting for orders table: {e}")
+        save_screenshot(context, "error-loading-orders-table-for-status")
+        raise
+
+    # Find the order row and check the status
+    try:
+        order_row = WebDriverWait(context.driver, 5).until(
+            expected_conditions.presence_of_element_located(
+                (By.CSS_SELECTOR, f'[data-testid="order-row-{order_id}"]')
+            )
+        )
+        print(f"✓ Found order row for order {order_id}")
+        save_screenshot(context, f"found-order-row-for-status-{order_id}")
+
+        cells = order_row.find_elements(By.TAG_NAME, "td")
+        print(f"  Order row has {len(cells)} columns")
+
+        # Print all cell values for debugging
+        for i, cell in enumerate(cells):
+            print(f"  Column {i}: {cell.text.strip()}")
+
+        # Assuming: cells[0] = order_id, cells[1] = customer_id, cells[2] = status
+        if len(cells) >= 3:
+            actual_status = cells[2].text.strip()
+            print(f"✓ Order {order_id} status: {actual_status}")
+            save_screenshot(context, f"order-{order_id}-status-{actual_status.lower()}")
+
+            assert (
+                actual_status.upper() == expected_status.upper()
+            ), f"Expected status '{expected_status}' but got '{actual_status}' for order {order_id}"
+            print(f"✓ Order status verified as {expected_status}")
+        else:
+            save_screenshot(context, f"error-checking-status-order-{order_id}")
+            assert (
+                False
+            ), f"Could not find status column for order {order_id} (only {len(cells)} columns found)"
+    except Exception as e:
+        print(f"❌ Error verifying order status: {e}")
+        save_screenshot(context, f"error-verifying-status-{order_id}")
+        raise
