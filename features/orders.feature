@@ -25,7 +25,7 @@ Feature: Order Management System
         Then I should see order with customer_id "1001" in the orders list
         And I should see order with customer_id "1002" in the orders list
         And I should see order with customer_id "1003" in the orders list
-    
+
     Scenario: Create a new order with items
         When I visit the "Orders Page"
         Then I should see the "Create New Order" section
@@ -68,4 +68,14 @@ Feature: Order Management System
         And I press the "Apply Filters" button
         Then I should see order with customer_id "1002" in the filtered results
         And I should not see order with customer_id "1001" in the filtered results
-    
+
+    Scenario: Duplicate an existing order with all its items
+        When I navigate to the "Orders Page"
+        And I press the "List All Orders" button
+        Then I should see order with customer_id "1001" in the results
+        When I locate the order ID for customer "1001"
+        And I trigger the repeat action for that order
+        Then a duplicate order should be created with the same customer_id "1001"
+        And the duplicated order should contain all original items
+
+   
