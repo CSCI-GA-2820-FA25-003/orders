@@ -1327,3 +1327,250 @@ def step_impl_select_status_in_filter_dropdown(context, status: str) -> None:
         print(f"❌ Error selecting status in filter dropdown {status}: {e}")
         save_screenshot(context, f"error-selecting-status-filter-{status.lower()}")
         raise
+
+
+# ====================
+# Repeat Order Scenario
+# ====================
+
+
+@when('I locate the order ID for customer "{customer_id}"')
+def step_impl_locate_order_id_for_customer(context, customer_id: str) -> None:
+    """Locate the order ID for a given customer_id from the orders list"""
+    print(f"\n=== LOCATING ORDER ID FOR CUSTOMER {customer_id} ===")
+
+    save_screenshot(context, f"before-locating-order-for-customer-{customer_id}")
+
+    # Wait for the table to load
+    try:
+        WebDriverWait(context.driver, 5).until(
+            expected_conditions.presence_of_element_located(
+                (By.CSS_SELECTOR, '[data-testid^="order-row-"]')
+            )
+        )
+        print("✓ Orders table loaded")
+        save_screenshot(context, "orders-table-loaded-for-locate")
+    except Exception as e:
+        print(f"❌ Error waiting for orders table: {e}")
+        save_screenshot(context, "error-loading-orders-table-for-locate")
+        raise
+
+    # Find the order with the matching customer_id
+    order_id = None
+    try:
+        order_rows = context.driver.find_elements(
+            By.CSS_SELECTOR, '[data-testid^="order-row-"]'
+        )
+        print(f"  Found {len(order_rows)} orders in the table")
+
+        for row in order_rows:
+            cells = row.find_elements(By.TAG_NAME, "td")
+            if len(cells) >= 2:
+                row_customer_id = cells[1].text.strip()
+                row_order_id = cells[0].text.strip()
+                print(
+                    f"  Checking row: order_id={row_order_id}, customer_id={row_customer_id}"
+                )
+
+                if row_customer_id == str(customer_id).strip():
+                    order_id = row_order_id
+                    print(f"✓ Located order ID: {order_id} for customer {customer_id}")
+                    save_screenshot(context, f"located-order-{order_id}")
+                    break
+
+        if not order_id:
+            save_screenshot(context, f"error-order-not-located-customer-{customer_id}")
+            assert False, f"Could not locate order with customer_id {customer_id}"
+
+        # Save the order ID and customer ID for the next steps
+        context.located_order_id = order_id
+        context.located_customer_id = customer_id
+        print(f"✓ Saved order ID: {order_id} to context")
+    except Exception as e:
+        print(f"❌ Error locating order: {e}")
+        save_screenshot(context, "error-locating-order")
+        raise
+
+
+@when("I trigger the repeat action for that order")
+def step_impl_trigger_repeat_action(context) -> None:
+    """Trigger the repeat action for the located order"""
+    assert hasattr(context, "located_order_id"), "No located order ID found in context"
+
+    order_id = context.located_order_id
+    print(f"\n=== TRIGGERING REPEAT ACTION FOR ORDER {order_id} ===")
+
+    save_screenshot(context, f"before-repeat-order-{order_id}")
+
+    # Find and click the repeat button for this order
+    try:
+        repeat_button = WebDriverWait(context.driver, 5).until(
+            expected_conditions.element_to_be_clickable(
+                (By.CSS_SELECTOR, f'[data-testid="repeat-order-{order_id}"]')
+            )
+        )
+        print(f"✓ Found Repeat button for order {order_id}")
+        save_screenshot(context, f"found-repeat-button-{order_id}")
+
+        # Scroll to button to ensure it's visible
+        context.driver.execute_script(
+            "arguments[0].scrollIntoView(true);", repeat_button
+        )
+        ActionChains(context.driver).move_to_element(repeat_button).click().perform()
+        print(f"✓ Clicked Repeat button for order {order_id}")
+        time.sleep(1)
+        save_screenshot(context, f"after-repeat-order-{order_id}")
+    except Exception as e:
+        print(f"❌ Error clicking Repeat button: {e}")
+        save_screenshot(context, f"error-clicking-repeat-button-{order_id}")
+        raise
+
+
+@then('a duplicate order should be created with the same customer_id "{customer_id}"')
+def step_impl_verify_duplicate_order_created(context, customer_id: str) -> None:
+    """Verify that a duplicate order has been created with the same customer_id"""
+    print(f"\n=== VERIFYING DUPLICATE ORDER FOR CUSTOMER {customer_id} ===")
+
+    save_screenshot(context, f"before-verifying-duplicate-{customer_id}")
+
+    # Wait for the success message or table update
+    time.sleep(1)
+
+    # Refresh the orders list to see the new order
+    try:
+        list_button = WebDriverWait(context.driver, 5).until(
+            expected_conditions.element_to_be_clickable(
+                (By.CSS_SELECTOR, '[data-testid="list-orders-button"]')
+            )
+        )
+        print("✓ Found List All Orders button")
+        ActionChains(context.driver).move_to_element(list_button).click().perform()
+        print("✓ Clicked List All Orders button to refresh")
+        time.sleep(0.5)
+        save_screenshot(context, "after-refresh-for-duplicate-check")
+    except Exception as e:
+        print(f"❌ Error refreshing orders list: {e}")
+        save_screenshot(context, "error-refreshing-for-duplicate")
+        raise
+
+    # Wait for the table to load
+    try:
+        WebDriverWait(context.driver, 5).until(
+            expected_conditions.presence_of_element_located(
+                (By.CSS_SELECTOR, '[data-testid^="order-row-"]')
+            )
+        )
+        print("✓ Orders table loaded")
+        save_screenshot(context, "orders-table-loaded-for-duplicate-check")
+    except Exception as e:
+        print(f"❌ Error waiting for orders table: {e}")
+        save_screenshot(context, "error-loading-orders-table-for-duplicate")
+        raise
+
+    # Count orders with the same customer_id
+    try:
+        order_rows = context.driver.find_elements(
+            By.CSS_SELECTOR, '[data-testid^="order-row-"]'
+        )
+        matching_orders = []
+
+        for row in order_rows:
+            cells = row.find_elements(By.TAG_NAME, "td")
+            if len(cells) >= 2:
+                row_customer_id = cells[1].text.strip()
+                row_order_id = cells[0].text.strip()
+
+                if row_customer_id == str(customer_id).strip():
+                    matching_orders.append(row_order_id)
+                    print(
+                        f"  Found order {row_order_id} with customer_id {row_customer_id}"
+                    )
+
+        print(f"✓ Found {len(matching_orders)} orders with customer_id {customer_id}")
+
+        # There should be at least 2 orders with the same customer_id (original + duplicate)
+        assert (
+            len(matching_orders) >= 2
+        ), f"Expected at least 2 orders with customer_id {customer_id}, but found {len(matching_orders)}"
+
+        # Save the new order ID (the one that's not the original)
+        original_order_id = context.located_order_id
+        for order_id in matching_orders:
+            if order_id != original_order_id:
+                context.duplicate_order_id = order_id
+                print(f"✓ Duplicate order ID: {order_id}")
+                break
+
+        print(f"✓ Duplicate order created successfully")
+        save_screenshot(context, f"verified-duplicate-order-{customer_id}")
+    except Exception as e:
+        print(f"❌ Error verifying duplicate order: {e}")
+        save_screenshot(context, f"error-verifying-duplicate-{customer_id}")
+        raise
+
+
+@then("the duplicated order should contain all original items")
+def step_impl_verify_duplicate_has_items(context) -> None:
+    """Verify that the duplicated order contains all original items"""
+    assert hasattr(
+        context, "duplicate_order_id"
+    ), "No duplicate order ID found in context"
+
+    duplicate_order_id = context.duplicate_order_id
+    print(f"\n=== VERIFYING ITEMS IN DUPLICATE ORDER {duplicate_order_id} ===")
+
+    save_screenshot(context, f"before-checking-duplicate-items-{duplicate_order_id}")
+
+    # Find the duplicate order row and check the items count
+    try:
+        order_row = WebDriverWait(context.driver, 5).until(
+            expected_conditions.presence_of_element_located(
+                (By.CSS_SELECTOR, f'[data-testid="order-row-{duplicate_order_id}"]')
+            )
+        )
+        print(f"✓ Found duplicate order row {duplicate_order_id}")
+        save_screenshot(context, f"found-duplicate-order-row-{duplicate_order_id}")
+
+        cells = order_row.find_elements(By.TAG_NAME, "td")
+        print(f"  Duplicate order row has {len(cells)} columns")
+
+        # Assuming: cells[0] = order_id, cells[1] = customer_id, cells[2] = status,
+        # cells[3] = total_price, cells[4] = items count
+        if len(cells) >= 5:
+            items_text = cells[4].text.strip()
+            print(f"✓ Duplicate order items column: {items_text}")
+
+            # Extract the number from "X item(s)" format
+            import re
+
+            match = re.search(r"(\d+)", items_text)
+            if match:
+                items_count = int(match.group(1))
+                print(f"✓ Duplicate order has {items_count} item(s)")
+
+                # Verify that the duplicate has at least 1 item
+                assert (
+                    items_count >= 1
+                ), f"Expected duplicate order to have at least 1 item, but found {items_count}"
+                print(f"✓ Duplicate order contains items successfully")
+                save_screenshot(
+                    context, f"verified-duplicate-items-{duplicate_order_id}"
+                )
+            else:
+                save_screenshot(
+                    context, f"error-parsing-items-count-{duplicate_order_id}"
+                )
+                assert False, f"Could not parse items count from: {items_text}"
+        else:
+            save_screenshot(
+                context, f"error-checking-items-duplicate-{duplicate_order_id}"
+            )
+            assert (
+                False
+            ), f"Could not find items column for duplicate order {duplicate_order_id}"
+    except Exception as e:
+        print(f"❌ Error verifying duplicate order items: {e}")
+        save_screenshot(
+            context, f"error-verifying-duplicate-items-{duplicate_order_id}"
+        )
+        raise
