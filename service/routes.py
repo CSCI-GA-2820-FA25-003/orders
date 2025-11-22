@@ -427,9 +427,11 @@ def delete_items(order_id, item_id):
     app.logger.info("Request to delete Item %s for Order id: %s", (item_id, order_id))
 
     # See if the item exists and delete it if it does
+    order = Order.find(order_id)
     item = Item.find(item_id)
     if item:
         item.delete()
+        order.update()
 
     return "", status.HTTP_204_NO_CONTENT
 

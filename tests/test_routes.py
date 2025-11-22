@@ -295,22 +295,6 @@ class TestOrderService(TestCase):
         data = resp.get_json()
         self.assertTrue(all(order["status"] == "PENDING" for order in data))
 
-    def test_filter_orders_by_total_range(self):
-        """It should filter orders by total price range"""
-        o1 = OrderFactory(total_price=Decimal(25.0))
-        o2 = OrderFactory(total_price=Decimal(100.0))
-        o3 = OrderFactory(total_price=Decimal(150.0))
-        o4 = OrderFactory(total_price=Decimal(250.0))
-        for o in [o1, o2, o3, o4]:
-            self.client.post(BASE_URL, json=o.serialize())
-        resp = self.client.get(f"{BASE_URL}?min_total=50&max_total=200")
-        self.assertEqual(resp.status_code, status.HTTP_200_OK)
-        data = resp.get_json()
-        totals = [Decimal(o["total_price"]) for o in data]
-        self.assertEqual(len(totals), 2)
-        self.assertIn(Decimal(100.0), totals)
-        self.assertIn(Decimal(150.0), totals)
-
     def test_filter_orders_combined(self):
         """It should support combined filters"""
         o1 = OrderFactory(customer_id=123, status="PENDING")

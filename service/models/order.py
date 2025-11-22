@@ -51,7 +51,7 @@ class Order(db.Model, PersistentBase):
             self.total_price = sum(
                 Decimal(item.price) * Decimal(item.quantity) for item in self.items
             )
-        elif self.total_price is None:
+        else:
             self.total_price = Decimal(0.0)
         super().create()
 
@@ -61,7 +61,7 @@ class Order(db.Model, PersistentBase):
             self.total_price = sum(
                 Decimal(item.price) * Decimal(item.quantity) for item in self.items
             )
-        elif self.total_price is None:
+        else:
             self.total_price = Decimal(0.0)
         super().update()
 
