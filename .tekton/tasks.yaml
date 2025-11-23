@@ -296,3 +296,94 @@ spec:
 
         echo "***** Running Tests *****"
         behave
+
+---
+apiVersion: tekton.dev/v1beta1
+kind: Task
+metadata:
+  name: build-and-push
+  labels:
+    app.kubernetes.io/version: "0.1"
+  annotations:
+    tekton.dev/categories: Build
+    tekton.dev/pipelines.minVersion: "0.17.0"
+    tekton.dev/tags: buildah, docker, image
+    tekton.dev/displayName: "build and push docker image"
+    tekton.dev/platforms: "linux/amd64"
+spec:
+  # Workspace containing the source code with Dockerfile
+  workspaces:
+    - name: source
+      description: The workspace containing the source code and Dockerfile
+  description: >-
+    This task builds a Docker image using buildah and pushes it to a container registry.
+    It uses the Dockerfile in the source workspace and requires privileged mode for buildah.
+  params:
+    - name: IMAGE
+      description: The fully qualified image name (registry/repository:tag)
+      type: string
+  steps:
+    # Step 1: Build the Docker image using buildah
+    - name: build
+      image: quay.io/buildah/stable:latest
+      workingDir: $(workspaces.source.path)
+      # Privileged mode required for buildah to work in Tekton/OpenShift
+      securityContext:
+        privileged: true
+      script: |
+        #!/bin/bash
+        set -e
+        
+        echo "***** Building Docker Image *****"
+        echo "Image: $(params.IMAGE)"
+        echo "Working Directory: $(workspaces.source.path)"
+        
+        # Verify Dockerfile exists
+        if [ ! -f "Dockerfile" ]; then
+          echo "ERROR: Dockerfile not found in $(workspaces.source.path)"
+          exit 1
+        fi
+        
+        # Build the image using buildah
+        # buildah bud builds an image from a Dockerfile
+        # -t tags the image with the provided IMAGE parameter
+        # . specifies the build context (current directory)
+        echo "Starting buildah build..."
+        buildah bud --format=docker -t $(params.IMAGE) .
+        
+        # Verify the image was created successfully
+        echo "Verifying image build..."
+        buildah images | grep "$(params.IMAGE)" || {
+          echo "ERROR: Image build failed - image not found"
+          exit 1
+        }
+        
+        echo "***** Image Build Successful *****"
+    
+    # Step 2: Push the image to the registry
+    - name: push
+      image: quay.io/buildah/stable:latest
+      workingDir: $(workspaces.source.path)
+      # Privileged mode required for buildah push operations
+      securityContext:
+        privileged: true
+      script: |
+        #!/bin/bash
+        set -e
+        
+        echo "***** Pushing Docker Image to Registry *****"
+        echo "Image: $(params.IMAGE)"
+        
+        # Push the image to the registry
+        # buildah push pushes the image to the specified registry
+        echo "Starting buildah push..."
+        buildah push $(params.IMAGE) docker://$(params.IMAGE)
+        
+        # Verify push was successful
+        if [ $? -eq 0 ]; then
+          echo "***** Image Push Successful *****"
+          echo "Image $(params.IMAGE) has been pushed to registry"
+        else
+          echo "ERROR: Image push failed"
+          exit 1
+        fi
