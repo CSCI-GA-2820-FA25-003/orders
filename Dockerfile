@@ -1,28 +1,28 @@
-# Image for a NYU Lab development environment
-FROM rofrano/nyu-devops-base:su25
+##################################################
+# Create production image
+##################################################
+FROM quay.io/rofrano/python:3.12-slim
 
-# Set up the Python development environment
+# Set up the Python production environment
 WORKDIR /app
 COPY Pipfile Pipfile.lock ./
-RUN sudo python -m pip install --upgrade pip pipenv && \
-    sudo pipenv install --system --dev
+RUN python -m pip install --upgrade pip pipenv && \
+    pipenv install --system --deploy
 
-# Install user mode tools
-COPY .devcontainer/scripts/install-tools.sh /tmp/
-RUN cd /tmp && bash ./install-tools.sh
+# Copy the application contents
+COPY wsgi.py .
+COPY service ./service
 
-RUN apt-get update && \
-    apt-get install -y --no-install-recommends ca-certificates chromium-driver firefox-esr python3-selenium
+# Switch to a non-root user and set file ownership
+RUN useradd --uid 1001 flask && \
+    chown -R flask /app
+USER flask
 
-# Copy application code
-COPY service /app/service
-COPY wsgi.py ./
+# Expose any ports the app is expecting in the environment
+ENV FLASK_APP="wsgi:app"
+ENV PORT=8080
+EXPOSE $PORT
 
-# Default fallback to SQLite (for local/dev convenience only; K8s will override via Deployment env)
-ENV DATABASE_URI=sqlite:////tmp/orders.db
-
-# Expose application port
-EXPOSE 8000
-
-# Start the Flask app with Gunicorn (wsgi:app)
-CMD ["gunicorn","--bind","0.0.0.0:8000","--log-level=info","wsgi:app"]
+ENV GUNICORN_BIND=0.0.0.0:$PORT
+ENTRYPOINT ["gunicorn"]
+CMD ["--log-level=info", "wsgi:app"]
