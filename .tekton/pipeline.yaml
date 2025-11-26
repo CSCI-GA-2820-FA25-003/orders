@@ -1,145 +1,174 @@
-apiVersion: tekton.dev/v1beta1
+apiVersion: tekton.dev/v1
 kind: Pipeline
 metadata:
-    name: orders-pipeline
-    labels:
-        app.kubernetes.io/version: '0.1'
+  creationTimestamp: '2025-11-25T23:58:33Z'
+  generation: 6
+  managedFields:
+    - apiVersion: tekton.dev/v1
+      fieldsType: FieldsV1
+      fieldsV1:
+        'f:spec':
+          .: {}
+          'f:finally': {}
+          'f:params': {}
+          'f:tasks': {}
+          'f:workspaces': {}
+      manager: Mozilla
+      operation: Update
+      time: '2025-11-26T03:14:43Z'
+  name: cd-pipeline
+  namespace: andrewkzhang-dev
+  resourceVersion: '4570376028'
+  uid: e3008d73-9fc4-4b14-9e7f-75a0f7054a53
 spec:
-    # Pipeline parameters
-    params:
-        - name: GIT_REPO
-          description: The Git repository URL to clone
-          type: string
-          default: 'https://github.com/CSCI-GA-2820-FA25-003/orders'
-        - name: GIT_REF
-          description: The Git revision to checkout
-          type: string
-          default: master
-        - name: IMAGE_REPO
-          description: The image repository base (registry/namespace/repository without tag). Image will be automatically tagged with the commit SHA from git-clone.
-          type: string
-          default: 'image-registry.openshift-image-registry.svc:5000/$(context.pipelineRun.namespace)/orders'
-        - name: BASE_URL
-          description: The base URL for BDD tests
-          type: string
-          default: 'http://orders-service:8000'
-
-    # Shared workspace for all tasks
-    workspaces:
+  params:
+    - description: The URL to the git repo
+      name: GIT_REPO
+      type: string
+    - default: master
+      description: The reference (branch or ref)
+      name: GIT_REF
+      type: string
+    - default: orders
+      description: Name of the application
+      name: APP_NAME
+      type: string
+    - default: 'image-registry.openshift-image-registry.svc:5000/$(context.pipelineRun.namespace)/$(params.APP_NAME):latest'
+      description: The name of the image to build
+      name: IMAGE_NAME
+      type: string
+  tasks:
+    - name: git-clone
+      params:
+        - name: CRT_FILENAME
+          value: ca-bundle.crt
+        - name: HTTP_PROXY
+          value: ''
+        - name: HTTPS_PROXY
+          value: ''
+        - name: NO_PROXY
+          value: ''
+        - name: SUBDIRECTORY
+          value: ''
+        - name: USER_HOME
+          value: /home/git
+        - name: DELETE_EXISTING
+          value: 'true'
+        - name: VERBOSE
+          value: 'false'
+        - name: SSL_VERIFY
+          value: 'true'
+        - name: URL
+          value: $(params.GIT_REPO)
+        - name: REVISION
+          value: $(params.GIT_REF)
+        - name: REFSPEC
+          value: ''
+        - name: SUBMODULES
+          value: 'true'
+        - name: DEPTH
+          value: '1'
+        - name: SPARSE_CHECKOUT_DIRECTORIES
+          value: ''
+      taskRef:
+        params:
+          - name: kind
+            value: task
+          - name: name
+            value: git-clone
+          - name: namespace
+            value: openshift-pipelines
+        resolver: cluster
+      workspaces:
+        - name: output
+          workspace: pipeline-workspace
+    - name: pylint
+      params:
+        - name: image
+          value: 'quay.io/rofrano/python:3.11-slim'
+        - name: path
+          value: service
+        - name: args
+          value: []
+        - name: requirements-file
+          value: requirements.txt
+      runAfter:
+        - git-clone
+      taskRef:
+        kind: Task
+        name: pylint
+      workspaces:
         - name: source
-          description: Workspace containing the cloned source code
-
-    # Pipeline tasks in execution order
-    tasks:
-        # Task 1: Clone the Git repository
-        - name: git-clone
-          taskRef:
-              resolver: cluster
-              params:
-                  - name: kind
-                    value: task
-                  - name: name
-                    value: git-clone
-                  - name: namespace
-                    value: openshift-pipelines
-          params:
-              - name: URL
-                value: $(params.GIT_REPO)
-              - name: REVISION
-                value: $(params.GIT_REF)
-              - name: SUBDIRECTORY
-                value: ''
-              - name: DELETE_EXISTING
-                value: 'true'
-          workspaces:
-              - name: output
-                workspace: source
-
-        # Task 2: Run linting (runs in parallel with test)
-        - name: lint
-          taskRef:
-              name: pylint
-          params:
-              - name: path
-                value: '.'
-              - name: args
-                value: []
-          workspaces:
-              - name: source
-                workspace: source
-          # Run after git-clone completes
-          runAfter:
-              - git-clone
-
-        # Task 3: Run unit tests (runs in parallel with lint)
-        - name: test
-          taskRef:
-              name: pytest-env
-          params:
-              - name: pytest-args
-                value: []
-          workspaces:
-              - name: source
-                workspace: source
-          # Run after git-clone completes (parallel with lint)
-          runAfter:
-              - git-clone
-
-        # Task 4: Build and push Docker image (runs after lint and test both succeed)
-        - name: build
-          taskRef:
-              name: build-and-push
-          params:
-              # Construct IMAGE automatically using commit SHA from git-clone
-              # The image will be tagged as: IMAGE_REPO:commit-sha
-              # Example: image-registry.openshift-image-registry.svc:5000/my-namespace/orders:6a9bf6502ed5fbe51c0fa08b6e0f01aeae7964f1
-              # The commit SHA comes from the git-clone task result
-              - name: IMAGE
-                # Automatically tag with commit SHA from git-clone task result
-                # Format: $(params.IMAGE_REPO):$(tasks.git-clone.results.COMMIT)
-                value: $(params.IMAGE_REPO):$(tasks.git-clone.results.COMMIT)
-          workspaces:
-              # Use the shared source workspace containing the Dockerfile
-              - name: source
-                workspace: source
-          # Build only runs after both lint and test tasks succeed
-          # Also depends on git-clone to get the COMMIT result
-          runAfter:
-              - lint
-              - test
-
-        # Task 5: Deploy the image to Kubernetes/OpenShift
-        - name: deploy
-          taskRef:
-              name: deploy-image
-          params:
-              # Pass the built image name to the deploy task
-              # Use the same image name that was built (with commit SHA tag)
-              - name: image-name
-                value: $(params.IMAGE_REPO):$(tasks.git-clone.results.COMMIT)
-              - name: manifest-dir
-                value: 'k8s'
-          workspaces:
-              - name: source
-                workspace: source
-          # Deploy runs after build completes
-          runAfter:
-              - build
-
-        # Task 6: Run BDD tests (runs after deploy completes)
-        - name: bdd
-          taskRef:
-              name: behave
-          params:
-              - name: base-url
-                value: $(params.BASE_URL)
-              - name: wait-seconds
-                value: '60'
-              - name: driver
-                value: 'chrome'
-          workspaces:
-              - name: source
-                workspace: source
-          # BDD tests run after deployment completes
-          runAfter:
-              - deploy
+          workspace: pipeline-workspace
+    - name: testing
+      params:
+        - name: pytest-args
+          value: []
+        - name: secret-name
+          value: postgres-creds
+        - name: secret-key
+          value: database_uri
+      runAfter:
+        - git-clone
+      taskRef:
+        kind: Task
+        name: pytest-env
+      workspaces:
+        - name: source
+          workspace: pipeline-workspace
+    - name: buildah
+      params:
+        - name: IMAGE
+          value: $(params.IMAGE_NAME)
+        - name: DOCKERFILE
+          value: ./Dockerfile
+        - name: BUILD_ARGS
+          value:
+            - ''
+        - name: CONTEXT
+          value: .
+        - name: STORAGE_DRIVER
+          value: vfs
+        - name: FORMAT
+          value: oci
+        - name: BUILD_EXTRA_ARGS
+          value: ''
+        - name: PUSH_EXTRA_ARGS
+          value: ''
+        - name: SKIP_PUSH
+          value: 'false'
+        - name: TLS_VERIFY
+          value: 'true'
+        - name: VERBOSE
+          value: 'false'
+      runAfter:
+        - pylint
+        - testing
+      taskRef:
+        params:
+          - name: kind
+            value: task
+          - name: name
+            value: buildah
+          - name: namespace
+            value: openshift-pipelines
+        resolver: cluster
+      workspaces:
+        - name: source
+          workspace: pipeline-workspace
+    - name: deploy-image
+      params:
+        - name: image-name
+          value: $(params.IMAGE_NAME)
+        - name: manifest-dir
+          value: k8s
+      runAfter:
+        - buildah
+      taskRef:
+        kind: Task
+        name: deploy-image
+      workspaces:
+        - name: source
+          workspace: pipeline-workspace
+  workspaces:
+    - name: pipeline-workspace
