@@ -2,7 +2,7 @@ apiVersion: tekton.dev/v1
 kind: Pipeline
 metadata:
   creationTimestamp: '2025-11-25T23:58:33Z'
-  generation: 6
+  generation: 14
   managedFields:
     - apiVersion: tekton.dev/v1
       fieldsType: FieldsV1
@@ -15,10 +15,10 @@ metadata:
           'f:workspaces': {}
       manager: Mozilla
       operation: Update
-      time: '2025-11-26T03:14:43Z'
+      time: '2025-11-26T23:25:42Z'
   name: cd-pipeline
   namespace: andrewkzhang-dev
-  resourceVersion: '4570376028'
+  resourceVersion: '4574526813'
   uid: e3008d73-9fc4-4b14-9e7f-75a0f7054a53
 spec:
   params:
@@ -36,6 +36,10 @@ spec:
     - default: 'image-registry.openshift-image-registry.svc:5000/$(context.pipelineRun.namespace)/$(params.APP_NAME):latest'
       description: The name of the image to build
       name: IMAGE_NAME
+      type: string
+    - default: 'http://localhost:8000/home'
+      description: The base route URL of the deployed Orders service
+      name: BASE_URL
       type: string
   tasks:
     - name: git-clone
@@ -167,6 +171,22 @@ spec:
       taskRef:
         kind: Task
         name: deploy-image
+      workspaces:
+        - name: source
+          workspace: pipeline-workspace
+    - name: behave
+      params:
+        - name: base-url
+          value: $(params.BASE_URL)
+        - name: wait-seconds
+          value: '60'
+        - name: driver
+          value: chrome
+      runAfter:
+        - deploy-image
+      taskRef:
+        kind: Task
+        name: behave
       workspaces:
         - name: source
           workspace: pipeline-workspace
