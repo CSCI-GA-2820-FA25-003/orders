@@ -1,5 +1,6 @@
-# Image for a NYU Lab development environment
-FROM rofrano/nyu-devops-base:su25
+# # Image for a NYU Lab development environment
+# FROM rofrano/nyu-devops-base:su25
+FROM quay.io/rofrano/python:3.12-slim
 
 # Set up the Python development environment
 WORKDIR /app
