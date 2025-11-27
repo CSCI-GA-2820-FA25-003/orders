@@ -22,4 +22,4 @@ spec:
               service:
                 name: orders-service
                 port:
-                  number: 8000
+                  number: 8080
