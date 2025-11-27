@@ -37,7 +37,7 @@ spec:
       description: The name of the image to build
       name: IMAGE_NAME
       type: string
-    - default: 'http://localhost:8000/home'
+    - default: 'http://orders-service:8000'
       description: The base route URL of the deployed Orders service
       name: BASE_URL
       type: string
