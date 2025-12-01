@@ -3,14 +3,6 @@ kind: Ingress
 metadata:
   name: orders-ingress
   namespace: default
-  annotations:
-    # Nginx Ingress Controller annotations
-    nginx.ingress.kubernetes.io/rewrite-target: /
-    nginx.ingress.kubernetes.io/ssl-redirect: "false"
-    nginx.ingress.kubernetes.io/enable-cors: "true"
-    nginx.ingress.kubernetes.io/cors-allow-origin: "*"
-    nginx.ingress.kubernetes.io/cors-allow-methods: "GET, POST, PUT, DELETE, OPTIONS"
-    nginx.ingress.kubernetes.io/cors-allow-headers: "DNT,User-Agent,X-Requested-With,If-Modified-Since,Cache-Control,Content-Type,Range,Authorization"
 spec:
   rules:
     - host: orders.local
@@ -22,4 +14,4 @@ spec:
               service:
                 name: orders-service
                 port:
-                  number: 8080
+                  number: 8000

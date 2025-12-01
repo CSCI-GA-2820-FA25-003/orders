@@ -37,8 +37,6 @@ spec:
         app: postgres
     spec:
       # Keep only fsGroup to avoid permission issues
-      securityContext:
-        fsGroup: 999
       containers:
         - name: postgres
           image: postgres:15-alpine
