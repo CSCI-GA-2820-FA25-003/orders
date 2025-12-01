@@ -19,7 +19,7 @@ spec:
       description: The name of the image to build
       name: IMAGE_NAME
       type: string
-    - default: "http://orders-service.default.svc.cluster.local:8000"
+    - default: "http://orders-service:8000/home"
       description: The base route URL of the deployed Orders service
       name: BASE_URL
       type: string
