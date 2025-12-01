@@ -3,7 +3,7 @@
 [![Build Status](https://github.com/CSCI-GA-2820-FA25-003/orders/actions/workflows/workflow.yml/badge.svg)](https://github.com/CSCI-GA-2820-FA25-003/orders/actions)
 [![License](https://img.shields.io/badge/License-Apache_2.0-blue.svg)](https://opensource.org/licenses/Apache-2.0)
 [![Python](https://img.shields.io/badge/Language-Python-blue.svg)](https://python.org/)
-[![codecov](https://codecov.io/gh/CSCI-GA-2820-FA25-003/orders/branch/master/graph/badge.svg)](https://codecov.io/gh/CSCI-GA-2820-FA25-003/orders)
+[![codecov](https://codecov.io/gh/CSCI-GA-2820-FA25-003/orders/graph/badge.svg?token=CTUI5TLDLE)](https://codecov.io/gh/CSCI-GA-2820-FA25-003/orders)
 [![Tekton Pipeline](https://img.shields.io/badge/Tekton-Pipeline-blue?logo=tekton&logoColor=white)](https://console-openshift-console.apps.os-cluster.example.com)
 
 ## Overview

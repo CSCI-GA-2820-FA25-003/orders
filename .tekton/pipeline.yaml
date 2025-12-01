@@ -1,25 +1,7 @@
 apiVersion: tekton.dev/v1
 kind: Pipeline
 metadata:
-  creationTimestamp: '2025-11-25T23:58:33Z'
-  generation: 14
-  managedFields:
-    - apiVersion: tekton.dev/v1
-      fieldsType: FieldsV1
-      fieldsV1:
-        'f:spec':
-          .: {}
-          'f:finally': {}
-          'f:params': {}
-          'f:tasks': {}
-          'f:workspaces': {}
-      manager: Mozilla
-      operation: Update
-      time: '2025-11-26T23:25:42Z'
   name: cd-pipeline
-  namespace: andrewkzhang-dev
-  resourceVersion: '4574526813'
-  uid: e3008d73-9fc4-4b14-9e7f-75a0f7054a53
 spec:
   params:
     - description: The URL to the git repo
@@ -33,11 +15,11 @@ spec:
       description: Name of the application
       name: APP_NAME
       type: string
-    - default: 'image-registry.openshift-image-registry.svc:5000/$(context.pipelineRun.namespace)/$(params.APP_NAME):latest'
+    - default: "image-registry.openshift-image-registry.svc:5000/$(context.pipelineRun.namespace)/$(params.APP_NAME):latest"
       description: The name of the image to build
       name: IMAGE_NAME
       type: string
-    - default: 'http://orders-service:8000'
+    - default: "http://orders-service.default.svc.cluster.local:8000"
       description: The base route URL of the deployed Orders service
       name: BASE_URL
       type: string
@@ -47,33 +29,33 @@ spec:
         - name: CRT_FILENAME
           value: ca-bundle.crt
         - name: HTTP_PROXY
-          value: ''
+          value: ""
         - name: HTTPS_PROXY
-          value: ''
+          value: ""
         - name: NO_PROXY
-          value: ''
+          value: ""
         - name: SUBDIRECTORY
-          value: ''
+          value: ""
         - name: USER_HOME
           value: /home/git
         - name: DELETE_EXISTING
-          value: 'true'
+          value: "true"
         - name: VERBOSE
-          value: 'false'
+          value: "false"
         - name: SSL_VERIFY
-          value: 'true'
+          value: "true"
         - name: URL
           value: $(params.GIT_REPO)
         - name: REVISION
           value: $(params.GIT_REF)
         - name: REFSPEC
-          value: ''
+          value: ""
         - name: SUBMODULES
-          value: 'true'
+          value: "true"
         - name: DEPTH
-          value: '1'
+          value: "1"
         - name: SPARSE_CHECKOUT_DIRECTORIES
-          value: ''
+          value: ""
       taskRef:
         params:
           - name: kind
@@ -89,7 +71,7 @@ spec:
     - name: pylint
       params:
         - name: image
-          value: 'quay.io/rofrano/python:3.11-slim'
+          value: "quay.io/rofrano/python:3.11-slim"
         - name: path
           value: service
         - name: args
@@ -128,7 +110,7 @@ spec:
           value: ./Dockerfile
         - name: BUILD_ARGS
           value:
-            - ''
+            - ""
         - name: CONTEXT
           value: .
         - name: STORAGE_DRIVER
@@ -136,15 +118,15 @@ spec:
         - name: FORMAT
           value: oci
         - name: BUILD_EXTRA_ARGS
-          value: ''
+          value: ""
         - name: PUSH_EXTRA_ARGS
-          value: ''
+          value: ""
         - name: SKIP_PUSH
-          value: 'false'
+          value: "false"
         - name: TLS_VERIFY
-          value: 'true'
+          value: "true"
         - name: VERBOSE
-          value: 'false'
+          value: "false"
       runAfter:
         - pylint
         - testing
@@ -179,7 +161,7 @@ spec:
         - name: base-url
           value: $(params.BASE_URL)
         - name: wait-seconds
-          value: '60'
+          value: "60"
         - name: driver
           value: chrome
       runAfter:
