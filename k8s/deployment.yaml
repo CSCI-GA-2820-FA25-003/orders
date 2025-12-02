@@ -16,9 +16,6 @@ spec:
         app: orders
         version: v1
     spec:
-      securityContext:
-        runAsUser: 1000
-        runAsGroup: 1000
       initContainers:
         - name: wait-for-postgres
           image: busybox:1.28
