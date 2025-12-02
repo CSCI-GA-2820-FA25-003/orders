@@ -1575,6 +1575,7 @@ def step_impl_verify_duplicate_has_items(context) -> None:
         )
         raise
 
+
 # ====================
 # Cancel Order Scenario
 # ====================
@@ -1583,9 +1584,7 @@ def step_impl_verify_duplicate_has_items(context) -> None:
 @when("I trigger the cancel action for that order")
 def step_impl_trigger_cancel_action(context) -> None:
     """Trigger the cancel action for the located order"""
-    assert hasattr(
-        context, "located_order_id"
-    ), "No located order ID found in context"
+    assert hasattr(context, "located_order_id"), "No located order ID found in context"
 
     order_id = context.located_order_id
     print(f"\n=== TRIGGERING CANCEL ACTION FOR ORDER {order_id} ===")
@@ -1619,9 +1618,7 @@ def step_impl_trigger_cancel_action(context) -> None:
 @then('the order should have status "{expected_status}"')
 def step_impl_verify_order_status(context, expected_status: str) -> None:
     """Verify that the order has the expected status"""
-    assert hasattr(
-        context, "located_order_id"
-    ), "No located order ID found in context"
+    assert hasattr(context, "located_order_id"), "No located order ID found in context"
 
     order_id = context.located_order_id
     print(f"\n=== VERIFYING STATUS FOR ORDER {order_id} ===")
