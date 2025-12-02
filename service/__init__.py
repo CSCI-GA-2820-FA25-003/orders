@@ -49,6 +49,7 @@ def create_app():
     # Create Flask application
     app = Flask(__name__, static_folder="static", static_url_path="/static")
     app.config.from_object(config)
+    # Set the static config for the application
     set_static_config(app)
     # Enable CORS for all routes
     CORS(app)
