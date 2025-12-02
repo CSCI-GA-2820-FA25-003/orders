@@ -18,6 +18,7 @@ Package for the application models and service routes
 This module creates and configures the Flask app and sets up the logging
 and SQL database
 """
+import os
 import sys
 from flask_cors import CORS
 from flask import Flask
@@ -29,6 +30,20 @@ from service.models.order import Order
 ############################################################
 # Initialize the Flask instance
 ############################################################
+
+
+def set_static_config(app):
+    """Set the static config for the application."""
+    with open(
+        os.path.join(app.root_path, "static", "assets", "config.js"),
+        "w",
+        encoding="utf-8",
+    ) as f:
+        url = os.getenv("API_URL", "http://localhost:8000")
+        f.write(f"window._env_ = {{ API_URL: '{url}' }};")
+    app.logger.info(f"Static config set to {url}")
+
+
 def create_app():
     """Initialize the core application."""
     # Create Flask application
