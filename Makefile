@@ -42,10 +42,9 @@ test: ## Run the unit tests
 	export RETRY_COUNT=1; pytest --pspec --cov=service --cov-fail-under=95 --cov-branch --cov-report=xml --disable-warnings
 
 .PHONY: run
-run: PORT ?= 8000
 run: ## Run the service
 	$(info Starting service...)
-	PORT=$(PORT) honcho start
+	 honcho start
 
 .PHONY: secret
 secret: ## Generate a secret hex key

@@ -70,7 +70,7 @@ class Order(db.Model, PersistentBase):
         return {
             "id": self.id,
             "customer_id": self.customer_id,
-            "status": self.status,
+            "status": self.status.value if isinstance(self.status, OrderStatus) else self.status,
             "total_price": str(self.total_price),
             "items": [item.serialize() for item in self.items],
         }

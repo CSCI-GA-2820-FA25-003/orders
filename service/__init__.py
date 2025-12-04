@@ -22,6 +22,7 @@ import os
 import sys
 from flask_cors import CORS
 from flask import Flask
+from flask_restx import Api
 from service import config
 from service.common import log_handlers
 from service.models.order import Order
