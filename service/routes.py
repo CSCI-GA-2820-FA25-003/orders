@@ -21,8 +21,8 @@ This service implements a REST API that allows you to Create, Read, Update
 and Delete Orders and Items using Flask-RESTx for Swagger/OpenAPI documentation
 """
 
-from flask import jsonify, request, abort, url_for, current_app as app
-from flask_restx import Api, Resource, fields, reqparse, inputs
+from flask import jsonify, request, current_app as app
+from flask_restx import Api, Resource, fields, reqparse
 from service.models.order import Order, OrderStatus
 from service.models.item import Item
 from service.common import status  # HTTP Status Codes
@@ -66,14 +66,8 @@ api = Api(
 ######################################################################
 # API INITIALIZATION
 ######################################################################
-order_ns = api.namespace("orders", description="Order operations")
-# Не используем параметры в определении namespace, вместо этого используем @ns.param в ресурсах
-item_ns = api.namespace("items", description="Item operations")
-
-# Переопределим маршруты для item_ns, чтобы работать с /orders/{order_id}/items
-def item_url(order_id):
-    """Возвращает URL для item operations"""
-    return f"{BASE_URL}/{order_id}/items"
+# Определяем единственное пространство имен для всех операций
+order_ns = api.namespace("orders", description="Order and Item operations")
 
 # Определим базовый URL для API
 BASE_URL = "/orders"
@@ -279,6 +273,17 @@ class OrderCollection(Resource):
         """Lists all of the Orders with optional filtering"""
         app.logger.info("Request for Order list with filters: %s", request.args)
 
+        # Check for unknown query parameters
+        allowed_params = set(["customer_id", "status", "min_total", "max_total"])
+        request_args = set(request.args.keys())
+        unknown_params = request_args - allowed_params
+
+        if unknown_params:
+            order_ns.abort(
+                status.HTTP_400_BAD_REQUEST,
+                f"Unknown query parameter(s): {', '.join(unknown_params)}",
+            )
+
         args = order_list_parser.parse_args()
         query = Order.query
 
@@ -333,7 +338,6 @@ class OrderCollection(Resource):
 
 # ORDER RESOURCE BY ID
 @order_ns.route("/<int:order_id>", strict_slashes=False)
-@order_ns.param("order_id", "The Order identifier")
 class OrderResource(Resource):
     """Handle all interactions with a single Order"""
 
@@ -396,7 +400,6 @@ class OrderResource(Resource):
 # Регистрация item ресурсов в основном API с правильным путем
 # Маршрут для коллекции элементов
 @order_ns.route("/<int:order_id>/items", strict_slashes=False)
-@order_ns.param("order_id", "The Order identifier")
 class ItemCollection(Resource):
     """Handle all interactions with collections of Items"""
 
@@ -411,10 +414,31 @@ class ItemCollection(Resource):
             request.args,
         )
 
+        # Check for unknown query parameters
+        allowed_params = set(
+            [
+                "category",
+                "name",
+                "description",
+                "product_id",
+                "min_price",
+                "max_price",
+                "quantity",
+            ]
+        )
+        request_args = set(request.args.keys())
+        unknown_params = request_args - allowed_params
+
+        if unknown_params:
+            order_ns.abort(
+                status.HTTP_400_BAD_REQUEST,
+                f"Unknown query parameter(s): {', '.join(unknown_params)}",
+            )
+
         # See if the order exists and abort if it doesn't
         order = Order.find(order_id)
         if not order:
-            item_ns.abort(
+            order_ns.abort(
                 status.HTTP_404_NOT_FOUND,
                 f"Order with id '{order_id}' could not be found.",
             )
@@ -435,10 +459,10 @@ class ItemCollection(Resource):
         # Return as an array of dictionaries
         return [item.serialize() for item in items]
 
-    @item_ns.doc("create_item")
-    @item_ns.expect(item_create_model)
-    @item_ns.response(201, "Item created", item_model)
-    @item_ns.marshal_with(item_model, code=201)
+    @order_ns.doc("create_item")
+    @order_ns.expect(item_create_model)
+    @order_ns.response(201, "Item created", item_model)
+    @order_ns.marshal_with(item_model, code=201)
     def post(self, order_id):
         """Create an Item on an Order"""
         app.logger.info("Request to create an Item for Order with id: %s", order_id)
@@ -446,7 +470,7 @@ class ItemCollection(Resource):
         # See if the order exists and abort if it doesn't
         order = Order.find(order_id)
         if not order:
-            item_ns.abort(
+            order_ns.abort(
                 status.HTTP_404_NOT_FOUND,
                 f"Order with id '{order_id}' could not be found.",
             )
@@ -469,15 +493,13 @@ class ItemCollection(Resource):
 
 
 # ITEM RESOURCE BY ID
-@item_ns.route("/<int:item_id>", strict_slashes=False)
-@item_ns.param("order_id", "The Order identifier")
-@item_ns.param("item_id", "The Item identifier")
+@order_ns.route("/<int:order_id>/items/<int:item_id>", strict_slashes=False)
 class ItemResource(Resource):
     """Handle all interactions with a single Item"""
 
-    @item_ns.doc("get_item")
-    @item_ns.response(404, "Item not found")
-    @item_ns.marshal_with(item_model)
+    @order_ns.doc("get_item")
+    @order_ns.response(404, "Item not found")
+    @order_ns.marshal_with(item_model)
     def get(self, order_id, item_id):
         """Get an Item"""
         app.logger.info(
@@ -487,17 +509,17 @@ class ItemResource(Resource):
         # See if the item exists and abort if it doesn't
         item = Item.find(item_id)
         if not item:
-            item_ns.abort(
+            order_ns.abort(
                 status.HTTP_404_NOT_FOUND,
                 f"Item with id '{item_id}' could not be found.",
             )
 
         return item.serialize()
 
-    @item_ns.doc("update_item")
-    @item_ns.expect(item_create_model)
-    @item_ns.response(404, "Item not found")
-    @item_ns.marshal_with(item_model)
+    @order_ns.doc("update_item")
+    @order_ns.expect(item_create_model)
+    @order_ns.response(404, "Item not found")
+    @order_ns.marshal_with(item_model)
     def put(self, order_id, item_id):
         """Update an Item"""
         app.logger.info(
@@ -507,7 +529,7 @@ class ItemResource(Resource):
         # See if the item exists and abort if it doesn't
         item = Item.find(item_id)
         if not item:
-            item_ns.abort(
+            order_ns.abort(
                 status.HTTP_404_NOT_FOUND,
                 f"Item with id '{item_id}' could not be found.",
             )
@@ -521,8 +543,8 @@ class ItemResource(Resource):
 
         return item.serialize()
 
-    @item_ns.doc("delete_item")
-    @item_ns.response(204, "Item deleted")
+    @order_ns.doc("delete_item")
+    @order_ns.response(204, "Item deleted")
     def delete(self, order_id, item_id):
         """Delete an Item"""
         app.logger.info(
@@ -543,7 +565,6 @@ class ItemResource(Resource):
 # ORDER ACTIONS
 ######################################################################
 @order_ns.route("/<int:order_id>/cancel", strict_slashes=False)
-@order_ns.param("order_id", "The Order identifier")
 class CancelOrderResource(Resource):
     """Cancel an Order"""
 
@@ -575,7 +596,6 @@ class CancelOrderResource(Resource):
 
 # REPEAT ORDER RESOURCE
 @order_ns.route("/<int:order_id>/repeat", strict_slashes=False)
-@order_ns.param("order_id", "The Order identifier")
 class RepeatOrderResource(Resource):
     """Repeat an existing Order"""
 
@@ -621,30 +641,6 @@ class RepeatOrderResource(Resource):
             "status": new_order.status.value,
         }
         return response, status.HTTP_201_CREATED
-
-
-######################################################################
-#  U T I L I T Y   F U N C T I O N S
-######################################################################
-
-
-def check_content_type(content_type) -> None:
-    """Checks that the media type is correct"""
-    if "Content-Type" not in request.headers:
-        app.logger.error("No Content-Type specified.")
-        abort(
-            status.HTTP_415_UNSUPPORTED_MEDIA_TYPE,
-            f"Content-Type must be {content_type}",
-        )
-
-    if request.headers["Content-Type"] == content_type:
-        return
-
-    app.logger.error("Invalid Content-Type: %s", request.headers["Content-Type"])
-    abort(
-        status.HTTP_415_UNSUPPORTED_MEDIA_TYPE,
-        f"Content-Type must be {content_type}",
-    )
 
 
 ######################################################################
