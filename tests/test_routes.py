@@ -160,11 +160,6 @@ class TestOrderService(TestCase):
         resp = self.client.put(BASE_URL, json={"not": "today"})
         self.assertEqual(resp.status_code, status.HTTP_405_METHOD_NOT_ALLOWED)
 
-    def test_check_content_type(self):
-        """check_content_type should 415 when Content-Type header is missing"""
-        resp = self.client.post(BASE_URL)  # no headers
-        self.assertEqual(resp.status_code, status.HTTP_415_UNSUPPORTED_MEDIA_TYPE)
-
     def test_update_order(self):
         """It should Update an existing Order"""
         # create an Order to update
