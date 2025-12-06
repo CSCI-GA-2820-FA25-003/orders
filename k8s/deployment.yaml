@@ -35,7 +35,7 @@ spec:
               protocol: TCP
           env:
             - name: API_URL
-              value: "http://orders-service:8000"
+              value: "http://orders-service:8000/api"
             - name: FLASK_APP
               value: "wsgi:app"
             - name: FLASK_ENV

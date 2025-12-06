@@ -34,7 +34,7 @@ DATABASE_URI = os.getenv(
     "DATABASE_URI", "postgresql+psycopg://postgres:postgres@localhost:5432/testdb"
 )
 
-BASE_URL = "/orders"
+BASE_URL = "api/orders"
 
 
 ######################################################################
@@ -975,7 +975,7 @@ class TestOrderActions(unittest.TestCase):
 
     def test_swagger_docs_endpoint(self):
         """It should serve Swagger documentation at /apidocs/"""
-        resp = self.client.get("/apidocs/")
+        resp = self.client.get("/apidocs")
         self.assertEqual(resp.status_code, status.HTTP_200_OK)
         # Verify it's HTML (Swagger UI)
         self.assertIn("text/html", resp.content_type)

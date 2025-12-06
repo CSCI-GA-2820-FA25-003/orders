@@ -42,7 +42,7 @@ def index():
         jsonify(
             name="Orders REST API Service",
             version="1.0",
-            docs=f"{request.url_root}apidocs/",
+            docs=f"{request.url_root}apidocs",
         ),
         status.HTTP_200_OK,
     )
@@ -59,21 +59,20 @@ api = Api(
     version="1.0",
     title="Orders REST API Service",
     description="This service implements a REST API for Orders management",
-    doc="/apidocs/",
+    doc="/apidocs",
 )
-
-# Log that Swagger documentation is available
-app.logger.info("Swagger documentation available at /apidocs/")
 
 
 ######################################################################
 # API INITIALIZATION
 ######################################################################
-# Namespace for all order and item operations
-order_ns = api.namespace("orders", description="Order and Item operations")
-
-# Base URL for the API
-BASE_URL = "/orders"
+# Определяем пространства имен для Orders и Items
+order_ns = api.namespace("api/orders", description="Order operations")
+item_ns = api.namespace(
+    "api/orders/<int:order_id>/items",
+    description="Item operations",
+    path="/api/orders/<int:order_id>/items",
+)
 
 ######################################################################
 ######################################################################
@@ -400,15 +399,15 @@ class OrderResource(Resource):
 ######################################################################
 
 
-# Register item resources in the main API
-# Item collection route
-@order_ns.route("/<int:order_id>/items", strict_slashes=False)
+# Регистрация item ресурсов в отдельном namespace
+# Маршрут для коллекции элементов
+@item_ns.route("", strict_slashes=False)
 class ItemCollection(Resource):
     """Handle all interactions with collections of Items"""
 
-    @order_ns.doc("list_items")
-    @order_ns.expect(item_list_parser)
-    @order_ns.marshal_list_with(item_model)
+    @item_ns.doc("list_items")
+    @item_ns.expect(item_list_parser)
+    @item_ns.marshal_list_with(item_model)
     def get(self, order_id):
         """List all Items for a given Order"""
         app.logger.info(
@@ -433,7 +432,7 @@ class ItemCollection(Resource):
         unknown_params = request_args - allowed_params
 
         if unknown_params:
-            order_ns.abort(
+            item_ns.abort(
                 status.HTTP_400_BAD_REQUEST,
                 f"Unknown query parameter(s): {', '.join(unknown_params)}",
             )
@@ -441,7 +440,7 @@ class ItemCollection(Resource):
         # See if the order exists and abort if it doesn't
         order = Order.find(order_id)
         if not order:
-            order_ns.abort(
+            item_ns.abort(
                 status.HTTP_404_NOT_FOUND,
                 f"Order with id '{order_id}' could not be found.",
             )
@@ -462,10 +461,10 @@ class ItemCollection(Resource):
         # Return as an array of dictionaries
         return [item.serialize() for item in items]
 
-    @order_ns.doc("create_item")
-    @order_ns.expect(item_create_model)
-    @order_ns.response(201, "Item created", item_model)
-    @order_ns.marshal_with(item_model, code=201)
+    @item_ns.doc("create_item")
+    @item_ns.expect(item_create_model)
+    @item_ns.response(201, "Item created", item_model)
+    @item_ns.marshal_with(item_model, code=201)
     def post(self, order_id):
         """Create an Item on an Order"""
         app.logger.info("Request to create an Item for Order with id: %s", order_id)
@@ -473,7 +472,7 @@ class ItemCollection(Resource):
         # See if the order exists and abort if it doesn't
         order = Order.find(order_id)
         if not order:
-            order_ns.abort(
+            item_ns.abort(
                 status.HTTP_404_NOT_FOUND,
                 f"Order with id '{order_id}' could not be found.",
             )
@@ -496,43 +495,41 @@ class ItemCollection(Resource):
 
 
 # ITEM RESOURCE BY ID
-@order_ns.route("/<int:order_id>/items/<int:item_id>", strict_slashes=False)
+@item_ns.route("/<int:item_id>", strict_slashes=False)
 class ItemResource(Resource):
     """Handle all interactions with a single Item"""
 
-    @order_ns.doc("get_item")
-    @order_ns.response(404, "Item not found")
-    @order_ns.marshal_with(item_model)
+    @item_ns.doc("get_item")
+    @item_ns.response(404, "Item not found")
+    @item_ns.marshal_with(item_model)
     def get(self, order_id, item_id):
         """Get an Item"""
         app.logger.info(
-            "Request to retrieve Item %s for Order id: %s", (item_id, order_id)
+            "Request to retrieve Item %s for Order id: %s", item_id, order_id
         )
 
         # See if the item exists and abort if it doesn't
         item = Item.find(item_id)
         if not item:
-            order_ns.abort(
+            item_ns.abort(
                 status.HTTP_404_NOT_FOUND,
                 f"Item with id '{item_id}' could not be found.",
             )
 
         return item.serialize()
 
-    @order_ns.doc("update_item")
-    @order_ns.expect(item_create_model)
-    @order_ns.response(404, "Item not found")
-    @order_ns.marshal_with(item_model)
+    @item_ns.doc("update_item")
+    @item_ns.expect(item_create_model)
+    @item_ns.response(404, "Item not found")
+    @item_ns.marshal_with(item_model)
     def put(self, order_id, item_id):
         """Update an Item"""
-        app.logger.info(
-            "Request to update Item %s for Order id: %s", (item_id, order_id)
-        )
+        app.logger.info("Request to update Item %s for Order id: %s", item_id, order_id)
 
         # See if the item exists and abort if it doesn't
         item = Item.find(item_id)
         if not item:
-            order_ns.abort(
+            item_ns.abort(
                 status.HTTP_404_NOT_FOUND,
                 f"Item with id '{item_id}' could not be found.",
             )
@@ -546,13 +543,11 @@ class ItemResource(Resource):
 
         return item.serialize()
 
-    @order_ns.doc("delete_item")
-    @order_ns.response(204, "Item deleted")
+    @item_ns.doc("delete_item")
+    @item_ns.response(204, "Item deleted")
     def delete(self, order_id, item_id):
         """Delete an Item"""
-        app.logger.info(
-            "Request to delete Item %s for Order id: %s", (item_id, order_id)
-        )
+        app.logger.info("Request to delete Item %s for Order id: %s", item_id, order_id)
 
         # See if the item exists and delete it if it does
         order = Order.find(order_id)
