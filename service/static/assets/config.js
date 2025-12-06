@@ -1,1 +1,1 @@
-window._env_ = { API_URL: 'http://localhost:8000/api' };
+window._env_ = { API_URL: '/api' };

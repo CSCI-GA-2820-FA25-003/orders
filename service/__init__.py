@@ -40,7 +40,7 @@ def set_static_config(app):
         "w",
         encoding="utf-8",
     ) as f:
-        url = os.getenv("API_URL", "http://localhost:8000/api")
+        url = os.getenv("API_URL", "/api")
         f.write(f"window._env_ = {{ API_URL: '{url}' }};")
     app.logger.info(f"Static config set to {url}")
 
