@@ -69,10 +69,10 @@ app.logger.info("Swagger documentation available at /apidocs/")
 ######################################################################
 # API INITIALIZATION
 ######################################################################
-# Определяем единственное пространство имен для всех операций
+# Namespace for all order and item operations
 order_ns = api.namespace("orders", description="Order and Item operations")
 
-# Определим базовый URL для API
+# Base URL for the API
 BASE_URL = "/orders"
 
 ######################################################################
