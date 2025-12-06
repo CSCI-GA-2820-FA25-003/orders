@@ -42,7 +42,7 @@ def index():
         jsonify(
             name="Orders REST API Service",
             version="1.0",
-            docs=f"{request.url_root}apidocs",
+            docs=f"{request.url_root}apidocs/",
         ),
         status.HTTP_200_OK,
     )
@@ -59,8 +59,11 @@ api = Api(
     version="1.0",
     title="Orders REST API Service",
     description="This service implements a REST API for Orders management",
-    doc="/apidocs",
+    doc="/apidocs/",
 )
+
+# Log that Swagger documentation is available
+app.logger.info("Swagger documentation available at /apidocs/")
 
 
 ######################################################################
@@ -397,8 +400,8 @@ class OrderResource(Resource):
 ######################################################################
 
 
-# Регистрация item ресурсов в основном API с правильным путем
-# Маршрут для коллекции элементов
+# Register item resources in the main API
+# Item collection route
 @order_ns.route("/<int:order_id>/items", strict_slashes=False)
 class ItemCollection(Resource):
     """Handle all interactions with collections of Items"""
