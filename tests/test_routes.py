@@ -972,7 +972,7 @@ class TestOrderActions(unittest.TestCase):
 
         resp = self.client.post(f"{BASE_URL}/{order.id}/repeat")
         self.assertEqual(resp.status_code, status.HTTP_400_BAD_REQUEST)
-    
+
     def test_swagger_docs_endpoint(self):
         """It should serve Swagger documentation at /apidocs/"""
         resp = self.client.get("/apidocs/")
@@ -981,3 +981,4 @@ class TestOrderActions(unittest.TestCase):
         self.assertIn("text/html", resp.content_type)
         # Verify Swagger UI content
         self.assertIn(b"swagger", resp.data.lower())
+        
