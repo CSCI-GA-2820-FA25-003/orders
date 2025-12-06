@@ -981,4 +981,3 @@ class TestOrderActions(unittest.TestCase):
         self.assertIn("text/html", resp.content_type)
         # Verify Swagger UI content
         self.assertIn(b"swagger", resp.data.lower())
-        
