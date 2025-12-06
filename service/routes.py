@@ -400,8 +400,8 @@ class OrderResource(Resource):
 ######################################################################
 
 
-# Регистрация item ресурсов в основном API с правильным путем
-# Маршрут для коллекции элементов
+# Register item resources in the main API
+# Item collection route
 @order_ns.route("/<int:order_id>/items", strict_slashes=False)
 class ItemCollection(Resource):
     """Handle all interactions with collections of Items"""
