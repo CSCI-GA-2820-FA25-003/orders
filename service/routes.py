@@ -42,7 +42,7 @@ def index():
         jsonify(
             name="Orders REST API Service",
             version="1.0",
-            docs=f"{request.url_root}apidocs",
+            docs=f"{request.url_root}apidocs/",
         ),
         status.HTTP_200_OK,
     )
@@ -59,7 +59,7 @@ api = Api(
     version="1.0",
     title="Orders REST API Service",
     description="This service implements a REST API for Orders management",
-    doc="/apidocs",
+    doc="/apidocs/",
 )
 
 
