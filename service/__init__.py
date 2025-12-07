@@ -33,16 +33,16 @@ from service.models.order import Order
 ############################################################
 
 
-def set_static_config(app):
-    """Set the static config for the application."""
-    with open(
-        os.path.join(app.root_path, "static", "assets", "config.js"),
-        "w",
-        encoding="utf-8",
-    ) as f:
-        url = os.getenv("API_URL", "/api")
-        f.write(f"window._env_ = {{ API_URL: '{url}' }};")
-    app.logger.info(f"Static config set to {url}")
+# def set_static_config(app):
+#     """Set the static config for the application."""
+#     with open(
+#         os.path.join(app.root_path, "static", "assets", "config.js"),
+#         "w",
+#         encoding="utf-8",
+#     ) as f:
+#         url = os.getenv("API_URL", "/api")
+#         f.write(f"window._env_ = {{ API_URL: '{url}' }};")
+#     app.logger.info(f"Static config set to {url}")
 
 
 def create_app():
@@ -51,7 +51,7 @@ def create_app():
     app = Flask(__name__, static_folder="static", static_url_path="/static")
     app.config.from_object(config)
     # Set the static config for the application
-    set_static_config(app)
+    # set_static_config(app)
     # Enable CORS for all routes
     CORS(app)
     # Initialize Plugins
