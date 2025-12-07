@@ -59,7 +59,6 @@ api = Api(
     version="1.0",
     title="Orders REST API Service",
     description="This service implements a REST API for Orders management",
-    prefix="/api",
     doc="/apidocs/",
 )
 
