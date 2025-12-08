@@ -18,7 +18,10 @@
 Orders Service with Flask-RESTx
 
 This service implements a REST API that allows you to Create, Read, Update
-and Delete Orders and Items using Flask-RESTx for Swagger/OpenAPI documentation
+and Delete Orders and Items using Flask-RESTx for Swagger/OpenAPI documentation.
+
+The Swagger documentation is automatically generated and available at /apidocs/
+endpoint when the service is running.
 """
 
 from flask import jsonify, request, current_app as app
