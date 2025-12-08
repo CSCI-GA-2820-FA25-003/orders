@@ -72,7 +72,6 @@ order_ns = api.namespace("api/orders", description="Order operations")
 item_ns = api.namespace(
     "api/orders/<int:order_id>/items",
     description="Item operations",
-    path="/api/orders/<int:order_id>/items",
 )
 
 ######################################################################
