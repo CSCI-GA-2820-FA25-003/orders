@@ -46,6 +46,7 @@ def index():
             name="Orders REST API Service",
             version="1.0",
             docs=f"{request.url_root}apidocs/",
+            frontend=f"{request.url_root}home"
         ),
         status.HTTP_200_OK,
     )
