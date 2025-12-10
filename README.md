@@ -20,6 +20,7 @@ This is a RESTful microservice for managing orders and their associated items. T
 - **PostgreSQL Database**: Robust data persistence with relational integrity
 - **Comprehensive Testing**: Full test coverage with pytest
 - **CI/CD Pipeline**: Automated testing and deployment with GitHub Actions
+- **Flask-RESTX + Swagger**: API routed under `/api` with interactive docs at `/apidocs/`
 
 ## Technology Stack
 
@@ -30,7 +31,20 @@ This is a RESTful microservice for managing orders and their associated items. T
 - **Web Server**: Gunicorn
 - **Python Version**: 3.11
 
+## Flask-RESTX & Swagger
+
+The Orders service has been refactored to follow the `lab-flask-restplus-swagger` layout and is now powered by Flask-RESTX:
+
+- **Namespaced API**: All REST resources live under the `/api` prefix (`orders` and nested `items` namespaces) so UI routes remain untouched.
+- **Interactive Docs**: Swagger/OpenAPI docs are generated directly from the Flask-RESTX annotations and are served at `/apidocs/`.
+- **Validated Payloads**: Data models declared in `service/routes.py` (`api.model(...)`) document and validate request/response payloads for orders and items, including nested structures.
+- **JSON Errors**: Custom handlers in `service/common/error_handlers.py` keep HTTP 4xx/5xx responses consistent and JSON-only, so bad requests never leak HTML.
+- **Test-First Refactor**: The existing pytest suite continues to run unchanged, ensuring the Flask-RESTX implementation behaves exactly like the original service.
+- **Planning Artifacts**: Work for this requirement is tracked as GitHub Issues on the ZenHub board, mirroring the workflow from Homework 1.
+
 ## API Endpoints
+
+All REST endpoints include the `/api` prefix to distinguish them from UI pages.
 
 ### Health & Info
 
@@ -41,23 +55,23 @@ This is a RESTful microservice for managing orders and their associated items. T
 
 ### Order Operations
 
-| Endpoint             | Method | Description                                         |
-| -------------------- | ------ | --------------------------------------------------- |
-| `/orders`            | POST   | Create a new order                                  |
-| `/orders`            | GET    | List all orders (supports `?name=` query parameter) |
-| `/orders/<order_id>` | GET    | Retrieve a specific order by ID                     |
-| `/orders/<order_id>` | PUT    | Update an existing order                            |
-| `/orders/<order_id>` | DELETE | Delete an order                                     |
+| Endpoint                | Method | Description                                         |
+| ----------------------- | ------ | --------------------------------------------------- |
+| `/api/orders`           | POST   | Create a new order                                  |
+| `/api/orders`           | GET    | List all orders (supports `?name=` query parameter) |
+| `/api/orders/<order_id>` | GET   | Retrieve a specific order by ID                     |
+| `/api/orders/<order_id>` | PUT   | Update an existing order                            |
+| `/api/orders/<order_id>` | DELETE | Delete an order                                     |
 
 ### Item Operations
 
-| Endpoint                             | Method | Description                |
-| ------------------------------------ | ------ | -------------------------- |
-| `/orders/<order_id>/items`           | POST   | Add an item to an order    |
-| `/orders/<order_id>/items`           | GET    | List all items in an order |
-| `/orders/<order_id>/items/<item_id>` | GET    | Get a specific item        |
-| `/orders/<order_id>/items/<item_id>` | PUT    | Update an item             |
-| `/orders/<order_id>/items/<item_id>` | DELETE | Delete an item             |
+| Endpoint                                 | Method | Description                |
+| ---------------------------------------- | ------ | -------------------------- |
+| `/api/orders/<order_id>/items`           | POST   | Add an item to an order    |
+| `/api/orders/<order_id>/items`           | GET    | List all items in an order |
+| `/api/orders/<order_id>/items/<item_id>` | GET    | Get a specific item        |
+| `/api/orders/<order_id>/items/<item_id>` | PUT    | Update an item             |
+| `/api/orders/<order_id>/items/<item_id>` | DELETE | Delete an item             |
 
 ## Data Models
 
