@@ -43,6 +43,7 @@ def step_impl(context):
     rest_endpoint = f"{context.base_url}/api/orders"
     context.resp = requests.get(rest_endpoint, timeout=WAIT_TIMEOUT)
     expect(context.resp.status_code).equal_to(HTTP_200_OK)
+    print(f"URL : {rest_endpoint}")
     # and delete them one by one
     for order in context.resp.json():
         context.resp = requests.delete(
