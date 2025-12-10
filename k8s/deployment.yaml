@@ -29,7 +29,7 @@ spec:
       containers:
         - name: orders
           image: cluster-registry:5000/orders:latest
-          imagePullPolicy: IfNotPresent
+          imagePullPolicy: Always
           ports:
             - name: http
               containerPort: 8000
